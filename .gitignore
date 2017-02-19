@@ -20,6 +20,10 @@ xcuserdata/
 ## Other
 *.moved-aside
 *.xcuserstate
+.DS_Store
+.theos/
+packages/
+.cydiaRepoUpload.log
 
 ## Obj-C/Swift specific
 *.hmap
