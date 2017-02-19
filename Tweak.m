@@ -8,7 +8,6 @@
 - (id)init {
     HBLogDebug(@"Found SPCore");
     return [OfflineManager si].spotifyCore = %orig;
-    //return spotifyCore = %orig;
 }
 
 %end

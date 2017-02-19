@@ -7,8 +7,8 @@
 - (void)setObject:(id)value forKey:(NSString *)key inDomain:(NSString *)domain;
 @end
 
-static NSString *nsDomainString = @"se.nosskirneh.spotifyofflineswitch";
-static NSString *nsNotificationString = @"se.nosskirneh.spotifyofflineswitch/preferences.changed";
+static NSString *nsDomainString = @"se.nosskirneh.sos";
+static NSString *nsNotificationString = @"se.nosskirneh.sos/preferences.changed";
 
 @interface SpotifyOfflineSwitchSwitch : NSObject <FSSwitchDataSource>
 @end
@@ -35,7 +35,7 @@ static NSString *nsNotificationString = @"se.nosskirneh.spotifyofflineswitch/pre
             
             HBLogDebug(@"%d", ([%c(OfflineManager) si].isCurrentViewOfflineView)); // This is always '0'
             HBLogDebug(@"Flipswitch ON");
-            // Set spotify online
+            // Set spotify offline
             [[%c(OfflineManager) si] setOffline:YES];
             break;
         case FSSwitchStateOff:
@@ -44,7 +44,7 @@ static NSString *nsNotificationString = @"se.nosskirneh.spotifyofflineswitch/pre
             
             HBLogDebug(@"%d", ([%c(OfflineManager) si].isCurrentViewOfflineView)); // This is always '0'
             HBLogDebug(@"Flipswitch OFF");
-            // Set spotify offline
+            // Set spotify online
             [[%c(OfflineManager) si] setOffline:NO];
             break;
     }
