@@ -1,61 +1,93 @@
-// Offline toggle
+#import "Header.h"
 
-#import "SPCore.h"
-#import "OfflineManager.h"
+
+static SPCore *core;
+static BOOL isCurrentViewOfflineView;
+
+void goOnline(CFNotificationCenterRef center,
+                    void *observer,
+                    CFStringRef name,
+                    const void *object,
+                    CFDictionaryRef userInfo) {
+    [core setForcedOffline:NO];
+}
+
+void goOffline(CFNotificationCenterRef center,
+              void *observer,
+              CFStringRef name,
+              const void *object,
+              CFDictionaryRef userInfo) {
+    [core setForcedOffline:YES];
+    NSNumber *n = (NSNumber *)[[NSUserDefaults standardUserDefaults] objectForKey:@"enabled" inDomain:nsDomainString];
+    HBLogDebug(@"%@", n); // always null
+}
+
+// Below should work, but doens't?
+//static NSString *nsNotificationString = @"se.nosskirneh.sos/preferences.changed";
+//
+//void offlineModeChanged(CFNotificationCenterRef center,
+//                        void *observer,
+//                        CFStringRef name,
+//                        const void *object,
+//                        CFDictionaryRef userInfo) {
+//    NSNumber *n = (NSNumber *)[[NSUserDefaults standardUserDefaults] objectForKey:@"enabled" inDomain:nsDomainString];
+//    BOOL enabled = (n)? [n boolValue]:YES;
+//    [core setForcedOffline:enabled];
+//}
+
+
 
 %hook SPCore
 
 - (id)init {
     HBLogDebug(@"Found SPCore");
-    return [OfflineManager si].spotifyCore = %orig;
+    
+    // Add observers
+    CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, &goOffline, CFStringRef(onlineNotification), NULL, 0);
+    CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, &goOnline, CFStringRef(offlineNotification), NULL, 0);
+    //CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, &offlineModeChanged, CFStringRef(nsNotificationString), NULL, 0);
+    
+    // Save core
+    return core = %orig;
+}
+
+- (void)setForcedOffline:(BOOL)arg {
+    // Save arg to [NSUserDefaults standardUserDefaults] here...
+    if (!isCurrentViewOfflineView) {
+        return %orig;
+    }
+    return;
 }
 
 %end
 
 
-@interface SettingsSection : NSObject
-
-@end
-
-
-@interface SettingsViewController : UIViewController
-
-@property (weak, nonatomic) NSArray<SettingsSection *> *sections;
-
-@end
-
-static BOOL didLoadSubviews = NO;
-
 %hook SettingsViewController
-
-- (void)viewDidLoad {
-    // Only call viewDidLayoutSubviews once
-    didLoadSubviews = NO;
-    HBLogDebug(@"Found a SettingsViewController");
-}
 
 - (void)viewDidLayoutSubviews {
     %orig;
-    if (!didLoadSubviews) {
-        [OfflineManager si].isCurrentViewOfflineView = NO;
-        didLoadSubviews = YES;
-        if (self.sections.count >= 1) {
-            NSString *className = NSStringFromClass([self.sections[1] class]);
-            
-            // Is current SettingsViewController the one with offline settings?
-            // in that case, set isCurrentViewOFflineView to YES so that we
-            // cannot toggle offline mode - Spotify will then crash!
-            if ([className isEqualToString:@"OfflineSettingsSection"]) {
-                [OfflineManager si].isCurrentViewOfflineView = YES;
-                HBLogDebug(@"Setting isCurrentViewOfflineView to %d", [OfflineManager si].isCurrentViewOfflineView);
-            }
+    if (self.sections.count >= 1) {
+        NSString *className = NSStringFromClass([self.sections[1] class]);
+        
+        // Is current SettingsViewController the one with offline settings?
+        // in that case, set isCurrentViewOFflineView to YES so that we
+        // cannot toggle offline mode - Spotify will then crash!
+        if ([className isEqualToString:@"OfflineSettingsSection"]) {
+            isCurrentViewOfflineView = YES;
         }
     }
 }
 
-- (void)viewDidDisappear {
-    [OfflineManager si].isCurrentViewOfflineView = NO;
-    HBLogDebug(@"Setting isCurrentViewOfflineView to %d", [OfflineManager si].isCurrentViewOfflineView);
+%end
+
+
+// Reset state after going back from "Playback" setting view
+%hook SPNavigationController
+
+- (void)viewWillLayoutSubviews {
+    %orig;
+    isCurrentViewOfflineView = NO;
 }
 
 %end
+

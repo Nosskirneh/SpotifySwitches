@@ -1,7 +1,7 @@
 include $(THEOS)/makefiles/common.mk
 
 TWEAK_NAME = SpotifyOfflineSwitch
-SpotifyOfflineSwitch_FILES = OfflineManager.m Tweak.xm
+SpotifyOfflineSwitch_FILES = Tweak.xm
 SpotifyOfflineSwitch_CFLAGS += -I.
 
 include $(THEOS_MAKE_PATH)/tweak.mk

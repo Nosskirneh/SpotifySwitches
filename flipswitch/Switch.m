@@ -1,14 +1,6 @@
 #import "FSSwitchDataSource.h"
 #import "FSSwitchPanel.h"
-#import "../OfflineManager.h"
-
-@interface NSUserDefaults (Tweak_Category)
-- (id)objectForKey:(NSString *)key inDomain:(NSString *)domain;
-- (void)setObject:(id)value forKey:(NSString *)key inDomain:(NSString *)domain;
-@end
-
-static NSString *nsDomainString = @"se.nosskirneh.sos";
-static NSString *nsNotificationString = @"se.nosskirneh.sos/preferences.changed";
+#import "../Header.h"
 
 @interface SpotifyOfflineSwitchSwitch : NSObject <FSSwitchDataSource>
 @end
@@ -31,21 +23,11 @@ static NSString *nsNotificationString = @"se.nosskirneh.sos/preferences.changed"
             break;
         case FSSwitchStateOn:
             [[NSUserDefaults standardUserDefaults] setObject:[NSNumber numberWithBool:YES] forKey:@"enabled" inDomain:nsDomainString];
-            CFNotificationCenterPostNotification(CFNotificationCenterGetDarwinNotifyCenter(), (CFStringRef)nsNotificationString, NULL, NULL, YES);
-            
-            HBLogDebug(@"%d", ([%c(OfflineManager) si].isCurrentViewOfflineView)); // This is always '0'
-            HBLogDebug(@"Flipswitch ON");
-            // Set spotify offline
-            [[%c(OfflineManager) si] setOffline:YES];
+            CFNotificationCenterPostNotification(CFNotificationCenterGetDarwinNotifyCenter(), (CFStringRef)offlineNotification, NULL, NULL, YES);
             break;
         case FSSwitchStateOff:
             [[NSUserDefaults standardUserDefaults] setObject:[NSNumber numberWithBool:NO] forKey:@"enabled" inDomain:nsDomainString];
-            CFNotificationCenterPostNotification(CFNotificationCenterGetDarwinNotifyCenter(), (CFStringRef)nsNotificationString, NULL, NULL, YES);
-            
-            HBLogDebug(@"%d", ([%c(OfflineManager) si].isCurrentViewOfflineView)); // This is always '0'
-            HBLogDebug(@"Flipswitch OFF");
-            // Set spotify online
-            [[%c(OfflineManager) si] setOffline:NO];
+            CFNotificationCenterPostNotification(CFNotificationCenterGetDarwinNotifyCenter(), (CFStringRef)onlineNotification, NULL, NULL, YES);
             break;
     }
 	return;
