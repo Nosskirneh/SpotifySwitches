@@ -18,8 +18,8 @@ void goOffline(CFNotificationCenterRef center,
               const void *object,
               CFDictionaryRef userInfo) {
     [core setForcedOffline:YES];
-    NSNumber *n = (NSNumber *)[[NSUserDefaults standardUserDefaults] objectForKey:@"enabled" inDomain:nsDomainString];
-    HBLogDebug(@"%@", n); // always null
+//    NSNumber *n = (NSNumber *)[[NSUserDefaults standardUserDefaults] objectForKey:@"enabled" inDomain:nsDomainString];
+//    HBLogDebug(@"%@", n); // always null
 }
 
 // Below should work, but doens't?
