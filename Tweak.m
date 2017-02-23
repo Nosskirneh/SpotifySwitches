@@ -1,7 +1,8 @@
 #import "include/Header.h"
 
-static SPCore *core;
-static BOOL isCurrentViewOfflineView;
+SPCore *core;
+SPTNowPlayingPlaybackController *playbackController;
+BOOL isCurrentViewOfflineView;
 
 // What happens when a notification from flipswitch was recieved?
 void goOnline(CFNotificationCenterRef center,
@@ -42,15 +43,37 @@ void goOffline(CFNotificationCenterRef center,
 // That didn't either work since unlike the file, the dict was never updated.
 //
 
+void shuffleOn(CFNotificationCenterRef center,
+              void *observer,
+              CFStringRef name,
+              const void *object,
+              CFDictionaryRef userInfo) {
+    [playbackController setGlobalShuffleMode:YES];
+}
+
+void shuffleOff(CFNotificationCenterRef center,
+               void *observer,
+               CFStringRef name,
+               const void *object,
+               CFDictionaryRef userInfo) {
+    [playbackController setGlobalShuffleMode:NO];
+}
+
 
 // Class that forces Offline Mode
 %hook SPCore
 
 - (id)init {
     // Add observers
+    // Offline:
     CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, &goOffline, CFStringRef(onlineNotification), NULL, 0);
     CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, &goOnline, CFStringRef(offlineNotification), NULL, 0);
-    //CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, &offlineModeChanged, CFStringRef(nsNotificationString), NULL, 0);
+    //CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, &offlineModeChanged, CFStringRef(offlineModeChanged), NULL, 0);
+    
+    // Shuffle:
+    CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, &shuffleOn, CFStringRef(shuffleOnNotification), NULL, 0);
+    CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, &shuffleOff, CFStringRef(shuffleOffNotification), NULL, 0);
+    //CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, &shuffleChanged, CFStringRef(shuffleChanged), NULL, 0);
     
     // Save core
     return core = %orig;
@@ -64,6 +87,18 @@ void goOffline(CFNotificationCenterRef center,
 }
 
 %end
+
+
+
+%hook SPTNowPlayingPlaybackController
+
+- (id)initWithPlayer:(id)arg1 trackPosition:(id)arg2 adsManager:(id)arg3 trackMetadataQueue:(id)arg4 {
+    HBLogDebug(@"Found Playback Controller!");
+    return playbackController = %orig;
+}
+
+%end
+
 
 
 // Prevents crash

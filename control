@@ -1,6 +1,6 @@
-Package: se.nosskirneh.sos
-Name: SpotifyOfflineSwitch
-Description: Flipswitch to toggle Spotify Offline Mode
+Package: se.nosskirneh.spotifyswitches
+Name: SpotifySwitches
+Description: Flipswitches for Spotify
 Version: 0.0.1
 Priority: optional
 Section: Addons (Flipswitch)

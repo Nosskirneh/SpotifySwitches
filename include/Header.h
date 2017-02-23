@@ -2,14 +2,17 @@
 #define HEADER
 
 // Notification strings
-NSString *const nsNotificationString = @"se.nosskirneh.sos/preferences.changed";
-NSString *const nsDomainString = @"se.nosskirneh.sos";
-NSString *const onlineNotification = @"se.nosskirneh.sos/online";
-NSString *const offlineNotification = @"se.nosskirneh.sos/offline";
-//NSString *const offlineModeChanged = @"se.nosskirneh.sos/toggled";
+NSString *const nsDomainString = @"se.nosskirneh.spotifyswitches";
+NSString *const onlineNotification = @"se.nosskirneh.spotifyswitches/online";
+NSString *const offlineNotification = @"se.nosskirneh.spotifyswitches/offline";
+//NSString *const offlineModeChanged = @"se.nosskirneh.spotifyswitches/toggledOffline";
+NSString *const shuffleOnNotification = @"se.nosskirneh.spotifyswitches/shuffleOn";
+NSString *const shuffleOffNotification = @"se.nosskirneh.spotifyswitches/shuffleOff";
+//NSString *const shuffleChanged = @"se.nosskirneh.spotifyswitches/toggledShuffle";
 
 // Lookup keys
 NSString *const offlineKey = @"SpotifyOfflineMode";
+NSString *const shuffleKey = @"SpotifyShuffle";
 
 
 @interface SPCore : NSObject
@@ -17,8 +20,13 @@ NSString *const offlineKey = @"SpotifyOfflineMode";
 @end
 
 
-@interface SettingsSection : NSObject
+@interface SPTNowPlayingPlaybackController : NSObject
+- (void)setGlobalShuffleMode:(BOOL)arg;
+- (BOOL)isShuffling;
+@end
 
+
+@interface SettingsSection : NSObject
 @end
 
 
@@ -34,7 +42,6 @@ NSString *const offlineKey = @"SpotifyOfflineMode";
 
 
 @interface SPNavigationController : UIViewController
-
 @end
 
 
