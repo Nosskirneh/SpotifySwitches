@@ -1,15 +1,19 @@
 #import "Header.h"
 
-
+extern NSMutableDictionary *settings;
 static SPCore *core;
 static BOOL isCurrentViewOfflineView;
 
+// What happens when a notification from flipswitch was recieved?
 void goOnline(CFNotificationCenterRef center,
                     void *observer,
                     CFStringRef name,
                     const void *object,
                     CFDictionaryRef userInfo) {
     [core setForcedOffline:NO];
+    NSNumber *n = settings[@"enabled"];
+    BOOL enabled = (n)? [n boolValue]:YES;
+    HBLogDebug(@"enabled: %d", enabled);
 }
 
 void goOffline(CFNotificationCenterRef center,
@@ -18,29 +22,42 @@ void goOffline(CFNotificationCenterRef center,
               const void *object,
               CFDictionaryRef userInfo) {
     [core setForcedOffline:YES];
-//    NSNumber *n = (NSNumber *)[[NSUserDefaults standardUserDefaults] objectForKey:@"enabled" inDomain:nsDomainString];
-//    HBLogDebug(@"%@", n); // always null
+    NSNumber *n = settings[@"enabled"];
+    BOOL enabled = (n)? [n boolValue]:YES;
+    HBLogDebug(@"enabled: %d", enabled);
 }
 
-// Below should work, but doens't?
-//static NSString *nsNotificationString = @"se.nosskirneh.sos/preferences.changed";
-//
 //void offlineModeChanged(CFNotificationCenterRef center,
 //                        void *observer,
 //                        CFStringRef name,
 //                        const void *object,
 //                        CFDictionaryRef userInfo) {
-//    NSNumber *n = (NSNumber *)[[NSUserDefaults standardUserDefaults] objectForKey:@"enabled" inDomain:nsDomainString];
-//    BOOL enabled = (n)? [n boolValue]:YES;
+//    //BOOL enabled = [[NSUserDefaults standardUserDefaults] boolForKey:offlineModeKey];
+//    
+//    [userDefaults synchronize];
+//    BOOL enabled = [userDefaults boolForKey:offlineModeKey];
+//    
+//    HBLogDebug(@"enabled flag: %d", enabled);
 //    [core setForcedOffline:enabled];
 //}
+//
+// The code above doesn't work since they don't share the same NSUserDefaults.
+// I have also tried with `CFPreferencesSetAppValue` as
+// https://github.com/PoomSmart/Spotlight-Flipswitch but without results.
+// I also tried creating a `settings = [NSMutableDictionary dictionaryWithContentsOfFile:[NSString stringWithFormat:@"/var/mobile/Library/Preferences/%@.plist", nsDomainString]];`
+// in here and read from the same file as `Switch.xm`.
+// That didn't either work since unlike the file, the dict was never updated.
+//
 
 
-
+// Class that forces Offline Mode
 %hook SPCore
 
 - (id)init {
-    HBLogDebug(@"Found SPCore");
+    // Init settings file
+    NSNumber *n = settings[@"enabled"];
+    BOOL enabled = (n)? [n boolValue]:YES;
+    HBLogDebug(@"%d", enabled);
     
     // Add observers
     CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, &goOffline, CFStringRef(onlineNotification), NULL, 0);
@@ -52,7 +69,6 @@ void goOffline(CFNotificationCenterRef center,
 }
 
 - (void)setForcedOffline:(BOOL)arg {
-    // Save arg to [NSUserDefaults standardUserDefaults] here...
     if (!isCurrentViewOfflineView) {
         return %orig;
     }
@@ -62,6 +78,7 @@ void goOffline(CFNotificationCenterRef center,
 %end
 
 
+// Prevents crash
 %hook SettingsViewController
 
 - (void)viewDidLayoutSubviews {
@@ -79,6 +96,17 @@ void goOffline(CFNotificationCenterRef center,
 }
 
 %end
+
+
+// Saves updated Offline Mode value (both through flipswitch and manually)
+//%hook Adjust // Use this when you've solved the the shared settings problem.
+//
+//- (void)setOfflineMode:(BOOL)arg {
+//    // Save value to NSUSerDefaults here
+//    %orig;
+//}
+//
+//%end
 
 
 // Reset state after going back from "Playback" setting view
