@@ -1,6 +1,5 @@
-#import "Header.h"
+#import "include/Header.h"
 
-extern NSMutableDictionary *settings;
 static SPCore *core;
 static BOOL isCurrentViewOfflineView;
 
@@ -11,9 +10,6 @@ void goOnline(CFNotificationCenterRef center,
                     const void *object,
                     CFDictionaryRef userInfo) {
     [core setForcedOffline:NO];
-    NSNumber *n = settings[@"enabled"];
-    BOOL enabled = (n)? [n boolValue]:YES;
-    HBLogDebug(@"enabled: %d", enabled);
 }
 
 void goOffline(CFNotificationCenterRef center,
@@ -22,9 +18,6 @@ void goOffline(CFNotificationCenterRef center,
               const void *object,
               CFDictionaryRef userInfo) {
     [core setForcedOffline:YES];
-    NSNumber *n = settings[@"enabled"];
-    BOOL enabled = (n)? [n boolValue]:YES;
-    HBLogDebug(@"enabled: %d", enabled);
 }
 
 //void offlineModeChanged(CFNotificationCenterRef center,
@@ -54,11 +47,6 @@ void goOffline(CFNotificationCenterRef center,
 %hook SPCore
 
 - (id)init {
-    // Init settings file
-    NSNumber *n = settings[@"enabled"];
-    BOOL enabled = (n)? [n boolValue]:YES;
-    HBLogDebug(@"%d", enabled);
-    
     // Add observers
     CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, &goOffline, CFStringRef(onlineNotification), NULL, 0);
     CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, &goOnline, CFStringRef(offlineNotification), NULL, 0);

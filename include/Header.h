@@ -1,13 +1,15 @@
 #ifndef HEADER
 #define HEADER
 
+// Notification strings
 NSString *const nsNotificationString = @"se.nosskirneh.sos/preferences.changed";
 NSString *const nsDomainString = @"se.nosskirneh.sos";
 NSString *const onlineNotification = @"se.nosskirneh.sos/online";
 NSString *const offlineNotification = @"se.nosskirneh.sos/offline";
-NSString *const offlineModeChanged = @"se.nosskirneh.sos/toggled";
-NSString *const pathToPlist = @"/var/mobile/Library/Preferences/%@.plist";
-NSMutableDictionary *settings = [NSMutableDictionary dictionaryWithContentsOfFile:[NSString stringWithFormat:pathToPlist, nsDomainString]];
+//NSString *const offlineModeChanged = @"se.nosskirneh.sos/toggled";
+
+// Lookup keys
+NSString *const offlineKey = @"SpotifyOfflineMode";
 
 
 @interface SPCore : NSObject

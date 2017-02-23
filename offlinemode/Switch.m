@@ -1,6 +1,6 @@
-#import "FSSwitchDataSource.h"
-#import "FSSwitchPanel.h"
-#import "../Header.h"
+#import "../include/FSSwitchDataSource.h"
+#import "../include/FSSwitchPanel.h"
+#import "../include/Header.h"
 
 @interface SpotifyOfflineSwitchSwitch : NSObject <FSSwitchDataSource>
 @end
@@ -12,7 +12,7 @@
 }
 
 - (FSSwitchState)stateForSwitchIdentifier:(NSString *)switchIdentifier {
-    NSNumber *n = (NSNumber *)[[NSUserDefaults standardUserDefaults] objectForKey:@"enabled" inDomain:nsDomainString];
+    NSNumber *n = (NSNumber *)[[NSUserDefaults standardUserDefaults] objectForKey:offlineKey inDomain:nsDomainString];
     BOOL enabled = (n)? [n boolValue]:YES;
     return (enabled) ? FSSwitchStateOn : FSSwitchStateOff;
 }
@@ -22,11 +22,11 @@
             case FSSwitchStateIndeterminate:
                 break;
             case FSSwitchStateOn:
-                [[NSUserDefaults standardUserDefaults] setObject:[NSNumber numberWithBool:YES] forKey:@"enabled" inDomain:nsDomainString];
+                [[NSUserDefaults standardUserDefaults] setObject:[NSNumber numberWithBool:YES] forKey:offlineKey inDomain:nsDomainString];
                 CFNotificationCenterPostNotification(CFNotificationCenterGetDarwinNotifyCenter(), (CFStringRef)offlineNotification, NULL, NULL, YES);
                 break;
             case FSSwitchStateOff:
-                [[NSUserDefaults standardUserDefaults] setObject:[NSNumber numberWithBool:NO] forKey:@"enabled" inDomain:nsDomainString];
+                [[NSUserDefaults standardUserDefaults] setObject:[NSNumber numberWithBool:NO] forKey:offlineKey inDomain:nsDomainString];
                 CFNotificationCenterPostNotification(CFNotificationCenterGetDarwinNotifyCenter(), (CFStringRef)onlineNotification, NULL, NULL, YES);
                 break;
         }
