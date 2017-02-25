@@ -1,4 +1,4 @@
-# SpotifyOfflineSwitch
-Flipswitch to toggle Spotify Offline Mode.
+# SpotifySwitches
+Flipswitch for Spotify.
 
-Tested on Spotify version 7.6.0
+Tested on Spotify version 7.6.0.
