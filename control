@@ -1,7 +1,8 @@
 Package: se.nosskirneh.spotifyswitches
 Name: SpotifySwitches
 Description: Flipswitches for Spotify
-Version: 0.0.2
+Version: 0.0.3
+Conflicts: se.nosskirneh.sos
 Priority: optional
 Section: Addons (Flipswitch)
 Architecture: iphoneos-arm

@@ -1,7 +1,5 @@
 include $(THEOS)/makefiles/common.mk
 
-CFLAGS = -I..
-
 BUNDLE_NAME = SpotifyShuffle
 SpotifyShuffle_FILES = Switch.xm
 SpotifyShuffle_FRAMEWORKS = UIKit

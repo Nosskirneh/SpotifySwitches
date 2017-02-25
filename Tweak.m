@@ -26,15 +26,14 @@ void doDisableOfflineMode(CFNotificationCenterRef center,
 }
 
 void doToggleShuffle(CFNotificationCenterRef center,
-                void *observer,
-                CFStringRef name,
-                const void *object,
-                CFDictionaryRef userInfo) {
+                     void *observer,
+                     CFStringRef name,
+                     const void *object,
+                     CFDictionaryRef userInfo) {
     
     // Update setting
     preferences = [[NSMutableDictionary alloc] initWithContentsOfFile:prefPath];
     BOOL next = ![[preferences objectForKey:shuffleKey] boolValue];
-    HBLogDebug(@"Setting shuffle to %d", next);
     
     [playbackController setGlobalShuffleMode:next];
 }
@@ -44,7 +43,6 @@ void doToggleShuffle(CFNotificationCenterRef center,
 %hook SPCore
 
 - (id)init {
-    HBLogDebug(@"Found SPCore!");
     // Init settings file
     preferences = [[NSMutableDictionary alloc] initWithContentsOfFile:prefPath];
     if (!preferences) preferences = [[NSMutableDictionary alloc] init];
@@ -64,7 +62,6 @@ void doToggleShuffle(CFNotificationCenterRef center,
 }
 
 - (void)setForcedOffline:(BOOL)arg {
-    HBLogDebug(@"setForcedOffline was called!");
     if (!isCurrentViewOfflineView) {
         return %orig;
     }
@@ -86,7 +83,6 @@ void doToggleShuffle(CFNotificationCenterRef center,
 %hook SPSession
 
 - (id)initWithCore:(id)arg1 coreCreateOptions:(id)arg2 session:(id)arg3 clientVersionString:(id)arg4 acceptLanguages:(id)arg5 {
-    HBLogDebug(@"Found SPSession!");
     return session = %orig;
 }
 
@@ -97,23 +93,20 @@ void doToggleShuffle(CFNotificationCenterRef center,
 
 - (void)viewDidLoad {
     %orig;
-    HBLogDebug(@"%d", session.isOffline);
 
     // Set default values for flipswitches
-    if (session.isOffline) { // This is too early, move to later in code execution
-        HBLogDebug(@"Spotify is Offline, defaulting Offline Mode to ON & shuffling to OFF");
+    if (session.isOffline) {
         [preferences setObject:[NSNumber numberWithBool:YES] forKey:offlineKey];
         [preferences setObject:[NSNumber numberWithBool:NO] forKey:shuffleKey];
 
     } else {
-        HBLogDebug(@"Spotify is Online, defaulting Offline Mode to OFF");
         [preferences setObject:[NSNumber numberWithBool:YES] forKey:offlineKey];
         
     }
     
     // Save changes
     if (![preferences writeToFile:prefPath atomically:YES]) {
-        HBLogDebug(@"Could not save preferences!");
+        HBLogError(@"Could not save preferences!");
     }
 }
 
@@ -124,7 +117,6 @@ void doToggleShuffle(CFNotificationCenterRef center,
 %hook SPTNowPlayingPlaybackController
 
 - (id)initWithPlayer:(id)arg1 trackPosition:(id)arg2 adsManager:(id)arg3 trackMetadataQueue:(id)arg4 {
-    HBLogDebug(@"Found Playback Controller!");
     return playbackController = %orig;
 }
 
@@ -153,23 +145,6 @@ void doToggleShuffle(CFNotificationCenterRef center,
 %end
 
 
-// Saves updated Offline Mode value (both through flipswitch and manually)
-%hook Adjust
-
-- (void)setOfflineMode:(BOOL)arg {
-    HBLogDebug(@"[ADJUST]: Changed Offline Mode");
-    [preferences setObject:[NSNumber numberWithBool:arg] forKey:offlineKey];
-    
-    if (![preferences writeToFile:prefPath atomically:YES]) {
-        HBLogDebug(@"Could not save preferences!");
-    }
-
-    %orig;
-}
-
-%end
-
-
 // Reset state after going back from "Playback" setting view
 %hook SPNavigationController
 
@@ -179,5 +154,37 @@ void doToggleShuffle(CFNotificationCenterRef center,
     isCurrentViewOfflineView = NO;
 }
 
+%end
+
+
+// Saves updated Offline Mode value (both through flipswitch and manually)
+%hook Adjust
+
+- (void)setOfflineMode:(BOOL)arg {
+    [preferences setObject:[NSNumber numberWithBool:arg] forKey:offlineKey];
+    
+    if (![preferences writeToFile:prefPath atomically:YES]) {
+        HBLogError(@"Could not save preferences!");
+    }
+
+    %orig;
+}
+
+%end
+
+
+// Saves updated shuffle value
+%hook SPTNowPlayingMusicHeadUnitViewController
+
+- (void)shuffleButtonPressed:(id)arg {
+    %orig;
+    BOOL current = [[preferences objectForKey:shuffleKey] boolValue];
+    [preferences setObject:[NSNumber numberWithBool:current] forKey:shuffleKey];
+    
+    if (![preferences writeToFile:prefPath atomically:YES]) {
+        HBLogError(@"Could not save preferences!");
+    }
+
+}
 %end
 

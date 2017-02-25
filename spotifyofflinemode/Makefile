@@ -1,7 +1,5 @@
 include $(THEOS)/makefiles/common.mk
 
-CFLAGS = -I..
-
 BUNDLE_NAME = SpotifyOfflineFlipswitch
 SpotifyOfflineFlipswitch_FILES = Switch.xm
 SpotifyOfflineFlipswitch_FRAMEWORKS = UIKit

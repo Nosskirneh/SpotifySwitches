@@ -2,8 +2,6 @@ include $(THEOS)/makefiles/common.mk
 
 TWEAK_NAME = SpotifySwitches
 SpotifySwitches_FILES = Tweak.xm
-SpotifySwitches_CFLAGS += -I.
-#SpotifySwitches_CCFLAGS = -std=c++11
 
 include $(THEOS_MAKE_PATH)/tweak.mk
 

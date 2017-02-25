@@ -32,12 +32,10 @@
             return;
             
         case FSSwitchStateOn:
-            HBLogDebug(@"Flipswitch ON");
             CFNotificationCenterPostNotification(CFNotificationCenterGetDarwinNotifyCenter(), (CFStringRef)doEnableOfflineModeNotification, NULL, NULL, YES);
             break;
             
         case FSSwitchStateOff:
-            HBLogDebug(@"Flipswitch OFF");
             CFNotificationCenterPostNotification(CFNotificationCenterGetDarwinNotifyCenter(), (CFStringRef)doDisableOfflineModeNotification, NULL, NULL, YES);
             break;
     }

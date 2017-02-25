@@ -19,6 +19,9 @@
 }
 
 - (FSSwitchState)stateForSwitchIdentifier:(NSString *)switchIdentifier {
+    // Update setting
+    preferences = [[NSMutableDictionary alloc] initWithContentsOfFile:prefPath];
+
     BOOL enabled = [[preferences objectForKey:shuffleKey] boolValue];
 	return (enabled) ? FSSwitchStateOn : FSSwitchStateOff;
 }
@@ -27,26 +30,23 @@
     switch (newState) {
         case FSSwitchStateIndeterminate:
             return;
-
-        case FSSwitchStateOn:
-            HBLogDebug(@"Flipswitch ON");
-            [preferences setObject:[NSNumber numberWithBool:YES] forKey:shuffleKey]; // next value
             
+        case FSSwitchStateOn:
+            [preferences setObject:[NSNumber numberWithBool:YES] forKey:shuffleKey];
             CFNotificationCenterPostNotification(CFNotificationCenterGetDarwinNotifyCenter(), (CFStringRef)doToggleShuffleNotification, NULL, NULL, YES);
             break;
-
+            
         case FSSwitchStateOff:
-            HBLogDebug(@"Flipswitch OFF");
-            [preferences setObject:[NSNumber numberWithBool:NO] forKey:shuffleKey]; // next value
+            [preferences setObject:[NSNumber numberWithBool:NO] forKey:shuffleKey];
             CFNotificationCenterPostNotification(CFNotificationCenterGetDarwinNotifyCenter(), (CFStringRef)doToggleShuffleNotification, NULL, NULL, YES);
             break;
-	}
-    
-    if (![preferences writeToFile:prefPath atomically:YES]) {
-        HBLogDebug(@"Could not save preferences!");
     }
     
-	return;
+    if (![preferences writeToFile:prefPath atomically:YES]) {
+        HBLogError(@"Could not save preferences!");
+    }
+    
+    return;
 }
 
 @end
