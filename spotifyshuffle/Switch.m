@@ -11,8 +11,6 @@
     // Init settings file
     preferences = [[NSMutableDictionary alloc] initWithContentsOfFile:prefPath];
     if (!preferences) preferences = [[NSMutableDictionary alloc] init];
-    NSNumber *value = [preferences objectForKey:shuffleKey];
-    HBLogDebug(@"Initial shuffle value: %@", value);
     return self;
 }
 
