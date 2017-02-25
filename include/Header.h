@@ -1,14 +1,15 @@
 #ifndef HEADER
 #define HEADER
 
+// Settings file
+NSMutableDictionary *preferences;
+NSString *const prefPath = @"/var/mobile/Library/Preferences/se.nosskirneh.spotifyswitches.plist";
+
 // Notification strings
 NSString *const nsDomainString = @"se.nosskirneh.spotifyswitches";
-NSString *const onlineNotification = @"se.nosskirneh.spotifyswitches/online";
-NSString *const offlineNotification = @"se.nosskirneh.spotifyswitches/offline";
-//NSString *const offlineModeChanged = @"se.nosskirneh.spotifyswitches/toggledOffline";
-NSString *const shuffleOnNotification = @"se.nosskirneh.spotifyswitches/shuffleOn";
-NSString *const shuffleOffNotification = @"se.nosskirneh.spotifyswitches/shuffleOff";
-//NSString *const shuffleChanged = @"se.nosskirneh.spotifyswitches/toggledShuffle";
+NSString *const doEnableOfflineModeNotification = @"se.nosskirneh.spotifyswitches/doEnableOfflineMode";
+NSString *const doDisableOfflineModeNotification = @"se.nosskirneh.spotifyswitches/doDisableOfflineMode";
+NSString *const doToggleShuffleNotification = @"se.nosskirneh.spotifyswitches/doToggleShuffle";
 
 // Lookup keys
 NSString *const offlineKey = @"SpotifyOfflineMode";
@@ -17,6 +18,15 @@ NSString *const shuffleKey = @"SpotifyShuffle";
 
 @interface SPCore : NSObject
 - (void)setForcedOffline:(BOOL)arg;
+@end
+
+
+@interface SPSession : NSObject
+@property (nonatomic, assign, readwrite) BOOL isOffline;
+@property (nonatomic, assign, readwrite) BOOL isOnline;
+@end
+
+@interface SPBarViewController : UIViewController
 @end
 
 

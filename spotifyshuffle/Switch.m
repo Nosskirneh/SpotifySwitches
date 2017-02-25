@@ -7,29 +7,47 @@
 
 @implementation SpotifyShuffleSwitch
 
+- (id)init {
+    // Init settings file
+    preferences = [[NSMutableDictionary alloc] initWithContentsOfFile:prefPath];
+    if (!preferences) preferences = [[NSMutableDictionary alloc] init];
+    NSNumber *value = [preferences objectForKey:shuffleKey];
+    HBLogDebug(@"Initial shuffle value: %@", value);
+    return self;
+}
+
 - (NSString *)titleForSwitchIdentifier:(NSString *)switchIdentifier {
 	return @"Spotify Shuffle";
 }
 
 - (FSSwitchState)stateForSwitchIdentifier:(NSString *)switchIdentifier {
-	NSNumber *n = (NSNumber *)[[NSUserDefaults standardUserDefaults] objectForKey:shuffleKey inDomain:nsDomainString];
-	BOOL enabled = (n)? [n boolValue]:YES;
+    BOOL enabled = [[preferences objectForKey:shuffleKey] boolValue];
 	return (enabled) ? FSSwitchStateOn : FSSwitchStateOff;
 }
 
 - (void)applyState:(FSSwitchState)newState forSwitchIdentifier:(NSString *)switchIdentifier {
-	switch (newState) {
-	case FSSwitchStateIndeterminate:
-		break;
-	case FSSwitchStateOn:
-		[[NSUserDefaults standardUserDefaults] setObject:[NSNumber numberWithBool:YES] forKey:shuffleKey inDomain:nsDomainString];
-		CFNotificationCenterPostNotification(CFNotificationCenterGetDarwinNotifyCenter(), (CFStringRef)shuffleOnNotification, NULL, NULL, YES);
-		break;
-	case FSSwitchStateOff:
-		[[NSUserDefaults standardUserDefaults] setObject:[NSNumber numberWithBool:NO] forKey:shuffleKey inDomain:nsDomainString];
-		CFNotificationCenterPostNotification(CFNotificationCenterGetDarwinNotifyCenter(), (CFStringRef)shuffleOffNotification, NULL, NULL, YES);
-		break;
+    switch (newState) {
+        case FSSwitchStateIndeterminate:
+            return;
+
+        case FSSwitchStateOn:
+            HBLogDebug(@"Flipswitch ON");
+            [preferences setObject:[NSNumber numberWithBool:YES] forKey:shuffleKey]; // next value
+            
+            CFNotificationCenterPostNotification(CFNotificationCenterGetDarwinNotifyCenter(), (CFStringRef)doToggleShuffleNotification, NULL, NULL, YES);
+            break;
+
+        case FSSwitchStateOff:
+            HBLogDebug(@"Flipswitch OFF");
+            [preferences setObject:[NSNumber numberWithBool:NO] forKey:shuffleKey]; // next value
+            CFNotificationCenterPostNotification(CFNotificationCenterGetDarwinNotifyCenter(), (CFStringRef)doToggleShuffleNotification, NULL, NULL, YES);
+            break;
 	}
+    
+    if (![preferences writeToFile:prefPath atomically:YES]) {
+        HBLogDebug(@"Could not save preferences!");
+    }
+    
 	return;
 }
 

@@ -1,62 +1,42 @@
 #import "include/Header.h"
 
 SPCore *core;
+SPSession *session;
 SPTNowPlayingPlaybackController *playbackController;
+SettingsViewController *offlineViewController;
 BOOL isCurrentViewOfflineView;
 
-// What happens when a notification from flipswitch was recieved?
-void goOnline(CFNotificationCenterRef center,
-                    void *observer,
-                    CFStringRef name,
-                    const void *object,
-                    CFDictionaryRef userInfo) {
-    [core setForcedOffline:NO];
-}
-
-void goOffline(CFNotificationCenterRef center,
-              void *observer,
-              CFStringRef name,
-              const void *object,
-              CFDictionaryRef userInfo) {
+// What should happen on triggered flipswitch event?
+void doEnableOfflineMode(CFNotificationCenterRef center,
+                     void *observer,
+                     CFStringRef name,
+                     const void *object,
+                     CFDictionaryRef userInfo) {
+    
     [core setForcedOffline:YES];
 }
 
-//void offlineModeChanged(CFNotificationCenterRef center,
-//                        void *observer,
-//                        CFStringRef name,
-//                        const void *object,
-//                        CFDictionaryRef userInfo) {
-//    //BOOL enabled = [[NSUserDefaults standardUserDefaults] boolForKey:offlineModeKey];
-//    
-//    [userDefaults synchronize];
-//    BOOL enabled = [userDefaults boolForKey:offlineModeKey];
-//    
-//    HBLogDebug(@"enabled flag: %d", enabled);
-//    [core setForcedOffline:enabled];
-//}
-//
-// The code above doesn't work since they don't share the same NSUserDefaults.
-// I have also tried with `CFPreferencesSetAppValue` as
-// https://github.com/PoomSmart/Spotlight-Flipswitch but without results.
-// I also tried creating a `settings = [NSMutableDictionary dictionaryWithContentsOfFile:[NSString stringWithFormat:@"/var/mobile/Library/Preferences/%@.plist", nsDomainString]];`
-// in here and read from the same file as `Switch.xm`.
-// That didn't either work since unlike the file, the dict was never updated.
-//
-
-void shuffleOn(CFNotificationCenterRef center,
-              void *observer,
-              CFStringRef name,
-              const void *object,
-              CFDictionaryRef userInfo) {
-    [playbackController setGlobalShuffleMode:YES];
+void doDisableOfflineMode(CFNotificationCenterRef center,
+                         void *observer,
+                         CFStringRef name,
+                         const void *object,
+                         CFDictionaryRef userInfo) {
+    
+    [core setForcedOffline:NO];
 }
 
-void shuffleOff(CFNotificationCenterRef center,
-               void *observer,
-               CFStringRef name,
-               const void *object,
-               CFDictionaryRef userInfo) {
-    [playbackController setGlobalShuffleMode:NO];
+void doToggleShuffle(CFNotificationCenterRef center,
+                void *observer,
+                CFStringRef name,
+                const void *object,
+                CFDictionaryRef userInfo) {
+    
+    // Update setting
+    preferences = [[NSMutableDictionary alloc] initWithContentsOfFile:prefPath];
+    BOOL next = ![[preferences objectForKey:shuffleKey] boolValue];
+    HBLogDebug(@"Setting shuffle to %d", next);
+    
+    [playbackController setGlobalShuffleMode:next];
 }
 
 
@@ -64,26 +44,77 @@ void shuffleOff(CFNotificationCenterRef center,
 %hook SPCore
 
 - (id)init {
+    HBLogDebug(@"Found SPCore!");
+    // Init settings file
+    preferences = [[NSMutableDictionary alloc] initWithContentsOfFile:prefPath];
+    if (!preferences) preferences = [[NSMutableDictionary alloc] init];
+    
+    
     // Add observers
     // Offline:
-    CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, &goOffline, CFStringRef(onlineNotification), NULL, 0);
-    CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, &goOnline, CFStringRef(offlineNotification), NULL, 0);
-    //CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, &offlineModeChanged, CFStringRef(offlineModeChanged), NULL, 0);
+    CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, &doEnableOfflineMode, CFStringRef(doEnableOfflineModeNotification), NULL, 0);
+    CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, &doDisableOfflineMode, CFStringRef(doDisableOfflineModeNotification), NULL, 0);
     
     // Shuffle:
-    CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, &shuffleOn, CFStringRef(shuffleOnNotification), NULL, 0);
-    CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, &shuffleOff, CFStringRef(shuffleOffNotification), NULL, 0);
-    //CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, &shuffleChanged, CFStringRef(shuffleChanged), NULL, 0);
+    CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, &doToggleShuffle, CFStringRef(doToggleShuffleNotification), NULL, 0);
     
+
     // Save core
     return core = %orig;
 }
 
 - (void)setForcedOffline:(BOOL)arg {
+    HBLogDebug(@"setForcedOffline was called!");
     if (!isCurrentViewOfflineView) {
         return %orig;
     }
+    // Else show alert saying why you cannot toggle in this menu
+    UIAlertController *alertController = [UIAlertController alertControllerWithTitle:@"Not allowed in this view"
+                                                                             message:@"Toggling the flipswitch while here crashes Spotify. I have therefore disabled this so you can continue enjoying the music uninterrupted!"
+                                                                      preferredStyle:UIAlertControllerStyleAlert];
+    [alertController addAction:[UIAlertAction actionWithTitle:@"Fine by me" style:UIAlertActionStyleCancel handler:^(UIAlertAction * _Nonnull action) {
+        [alertController dismissViewControllerAnimated:YES completion:nil];
+    }]];
+    [offlineViewController presentViewController:alertController animated:YES completion:nil];
     return;
+}
+
+%end
+
+
+// Has property isOffline and isOnline. Used setting start values.
+%hook SPSession
+
+- (id)initWithCore:(id)arg1 coreCreateOptions:(id)arg2 session:(id)arg3 clientVersionString:(id)arg4 acceptLanguages:(id)arg5 {
+    HBLogDebug(@"Found SPSession!");
+    return session = %orig;
+}
+
+%end
+
+
+%hook SPBarViewController
+
+- (void)viewDidLoad {
+    %orig;
+    HBLogDebug(@"%d", session.isOffline);
+
+    // Set default values for flipswitches
+    if (session.isOffline) { // This is too early, move to later in code execution
+        HBLogDebug(@"Spotify is Offline, defaulting Offline Mode to ON & shuffling to OFF");
+        [preferences setObject:[NSNumber numberWithBool:YES] forKey:offlineKey];
+        [preferences setObject:[NSNumber numberWithBool:NO] forKey:shuffleKey];
+
+    } else {
+        HBLogDebug(@"Spotify is Online, defaulting Offline Mode to OFF");
+        [preferences setObject:[NSNumber numberWithBool:YES] forKey:offlineKey];
+        
+    }
+    
+    // Save changes
+    if (![preferences writeToFile:prefPath atomically:YES]) {
+        HBLogDebug(@"Could not save preferences!");
+    }
 }
 
 %end
@@ -113,6 +144,7 @@ void shuffleOff(CFNotificationCenterRef center,
         // in that case, set isCurrentViewOFflineView to YES so that we
         // cannot toggle offline mode - Spotify will then crash!
         if ([className isEqualToString:@"OfflineSettingsSection"]) {
+            offlineViewController = self;
             isCurrentViewOfflineView = YES;
         }
     }
@@ -122,14 +154,20 @@ void shuffleOff(CFNotificationCenterRef center,
 
 
 // Saves updated Offline Mode value (both through flipswitch and manually)
-//%hook Adjust // Use this when you've solved the the shared settings problem.
-//
-//- (void)setOfflineMode:(BOOL)arg {
-//    // Save value to NSUSerDefaults here
-//    %orig;
-//}
-//
-//%end
+%hook Adjust
+
+- (void)setOfflineMode:(BOOL)arg {
+    HBLogDebug(@"[ADJUST]: Changed Offline Mode");
+    [preferences setObject:[NSNumber numberWithBool:arg] forKey:offlineKey];
+    
+    if (![preferences writeToFile:prefPath atomically:YES]) {
+        HBLogDebug(@"Could not save preferences!");
+    }
+
+    %orig;
+}
+
+%end
 
 
 // Reset state after going back from "Playback" setting view
@@ -137,6 +175,7 @@ void shuffleOff(CFNotificationCenterRef center,
 
 - (void)viewWillLayoutSubviews {
     %orig;
+    offlineViewController = nil;
     isCurrentViewOfflineView = NO;
 }
 

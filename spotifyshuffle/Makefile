@@ -1,5 +1,7 @@
 include $(THEOS)/makefiles/common.mk
 
+CFLAGS = -I..
+
 BUNDLE_NAME = SpotifyShuffle
 SpotifyShuffle_FILES = Switch.xm
 SpotifyShuffle_FRAMEWORKS = UIKit
@@ -8,5 +10,5 @@ SpotifyShuffle_INSTALL_PATH = /Library/Switches
 
 include $(THEOS_MAKE_PATH)/bundle.mk
 
-after-install::
-	install.exec "killall -9 SpringBoard"
+before-stage::
+	rm switch.xm; ln -s Switch.m Switch.xm
