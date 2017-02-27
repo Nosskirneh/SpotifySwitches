@@ -7,6 +7,7 @@ SettingsViewController *offlineViewController;
 BOOL isCurrentViewOfflineView;
 
 // What should happen on triggered flipswitch event?
+// Offline
 void doEnableOfflineMode(CFNotificationCenterRef center,
                      void *observer,
                      CFStringRef name,
@@ -25,6 +26,7 @@ void doDisableOfflineMode(CFNotificationCenterRef center,
     [core setForcedOffline:NO];
 }
 
+// Shuffle
 void doToggleShuffle(CFNotificationCenterRef center,
                      void *observer,
                      CFStringRef name,
@@ -34,9 +36,26 @@ void doToggleShuffle(CFNotificationCenterRef center,
     // Update setting
     preferences = [[NSMutableDictionary alloc] initWithContentsOfFile:prefPath];
     BOOL next = ![[preferences objectForKey:shuffleKey] boolValue];
-    
     [playbackController setGlobalShuffleMode:next];
 }
+
+// Repeat
+void doEnableRepeat(CFNotificationCenterRef center,
+                     void *observer,
+                     CFStringRef name,
+                     const void *object,
+                     CFDictionaryRef userInfo) {
+    [playbackController setRepeatMode:2];
+}
+
+void doDisableRepeat(CFNotificationCenterRef center,
+                    void *observer,
+                    CFStringRef name,
+                    const void *object,
+                    CFDictionaryRef userInfo) {
+    [playbackController setRepeatMode:0];
+}
+
 
 
 // Class that forces Offline Mode
@@ -55,6 +74,10 @@ void doToggleShuffle(CFNotificationCenterRef center,
     
     // Shuffle:
     CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, &doToggleShuffle, CFStringRef(doToggleShuffleNotification), NULL, 0);
+        
+    // Repeat:
+    CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, &doEnableRepeat, CFStringRef(doEnableRepeatNotification), NULL, 0);
+    CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, &doDisableRepeat, CFStringRef(doDisableRepeatNotification), NULL, 0);
     
 
     // Save core
@@ -79,7 +102,7 @@ void doToggleShuffle(CFNotificationCenterRef center,
 %end
 
 
-// Has property isOffline and isOnline. Used setting start values.
+// Has propertes isOffline and isOnline. Used to set start values.
 %hook SPSession
 
 - (id)initWithCore:(id)arg1 coreCreateOptions:(id)arg2 session:(id)arg3 clientVersionString:(id)arg4 acceptLanguages:(id)arg5 {
@@ -94,15 +117,21 @@ void doToggleShuffle(CFNotificationCenterRef center,
 - (void)viewDidLoad {
     %orig;
 
-    // Set default values for flipswitches
-    if (session.isOffline) {
-        [preferences setObject:[NSNumber numberWithBool:YES] forKey:offlineKey];
-        [preferences setObject:[NSNumber numberWithBool:NO] forKey:shuffleKey];
-
-    } else {
-        [preferences setObject:[NSNumber numberWithBool:YES] forKey:offlineKey];
-        
-    }
+    // Set default values on app launch
+    // Add settings pane to determine which one should be used.
+    // Simply update flipswitch values to Spotify defaults
+//    if (session.isOffline) {
+//        [preferences setObject:[NSNumber numberWithBool:YES] forKey:offlineKey];
+//        [preferences setObject:[NSNumber numberWithBool:NO] forKey:shuffleKey];
+//
+//    } else {
+//        [preferences setObject:[NSNumber numberWithBool:YES] forKey:offlineKey];
+//        
+//    }
+    
+    // Override Spotify values to current flipswitch values
+    [playbackController setRepeatMode:[[preferences objectForKey:repeatKey] intValue]];
+    [playbackController setGlobalShuffleMode:[[preferences objectForKey:shuffleKey] boolValue]];
     
     // Save changes
     if (![preferences writeToFile:prefPath atomically:YES]) {
@@ -118,6 +147,16 @@ void doToggleShuffle(CFNotificationCenterRef center,
 
 - (id)initWithPlayer:(id)arg1 trackPosition:(id)arg2 adsManager:(id)arg3 trackMetadataQueue:(id)arg4 {
     return playbackController = %orig;
+}
+
+- (void)setRepeatMode:(NSUInteger)value {
+    %orig;
+
+    // Update value
+    [preferences setObject:[NSNumber numberWithInteger:value] forKey:repeatKey];
+    if (![preferences writeToFile:prefPath atomically:YES]) {
+        HBLogError(@"Could not save preferences!");
+    }
 }
 
 %end

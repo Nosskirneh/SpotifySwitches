@@ -17,4 +17,5 @@ after-install::
 
 SUBPROJECTS += spotifyofflinemode
 SUBPROJECTS += spotifyshuffle
+SUBPROJECTS += spotifyrepeat
 include $(THEOS_MAKE_PATH)/aggregate.mk

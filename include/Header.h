@@ -12,10 +12,14 @@ NSString *const doEnableOfflineModeNotification = @"se.nosskirneh.spotifyswitche
 NSString *const doDisableOfflineModeNotification = @"se.nosskirneh.spotifyswitches/doDisableOfflineMode";
 // Shuffle
 NSString *const doToggleShuffleNotification = @"se.nosskirneh.spotifyswitches/doToggleShuffle";
+// Repeat
+NSString *const doEnableRepeatNotification = @"se.nosskirneh.spotifyswitches/doEnableRepeat";
+NSString *const doDisableRepeatNotification = @"se.nosskirneh.spotifyswitches/doDisableRepeat";
 
 // Lookup keys
 NSString *const offlineKey = @"SpotifyOfflineMode";
 NSString *const shuffleKey = @"SpotifyShuffle";
+NSString *const repeatKey  = @"SpotifyRepeat";
 
 
 @interface SPCore : NSObject
@@ -32,6 +36,8 @@ NSString *const shuffleKey = @"SpotifyShuffle";
 @interface SPTNowPlayingPlaybackController : NSObject
 - (void)setGlobalShuffleMode:(BOOL)arg;
 - (BOOL)isShuffling;
+//- (void)toggleRepeatMode;
+- (void)setRepeatMode:(NSUInteger)value;
 @end
 
 
