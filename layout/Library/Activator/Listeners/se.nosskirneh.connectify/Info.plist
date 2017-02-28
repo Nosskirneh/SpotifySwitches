@@ -1,0 +1,5 @@
+{
+    title = "Connectify";
+    description = "Control your Spotify Connect devices";
+    "compatible-modes" = ("springboard", "application", "lockscreen");
+}

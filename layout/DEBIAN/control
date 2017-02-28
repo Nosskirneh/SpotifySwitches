@@ -6,6 +6,6 @@ Conflicts: se.nosskirneh.sos
 Priority: optional
 Section: Addons (Flipswitch)
 Architecture: iphoneos-arm
-Depends: mobilesubstrate, com.a3tweaks.flipswitch
+Depends: mobilesubstrate , com.a3tweaks.flipswitch, libactivator
 Maintainer: Andreas Henriksson
 Author: Andreas Henriksson

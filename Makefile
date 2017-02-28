@@ -1,7 +1,8 @@
 include $(THEOS)/makefiles/common.mk
 
 TWEAK_NAME = SpotifySwitches
-SpotifySwitches_FILES = Tweak.xm
+SpotifySwitches_FILES = Tweak.xm ConnectManager.xm Connectify.xm
+SpotifySwitches_LIBRARIES = activator
 
 include $(THEOS_MAKE_PATH)/tweak.mk
 
@@ -12,7 +13,7 @@ before-stage::
 before-install::
 	~/Dropbox/bin/updateIP.sh && source ~/Dropbox/bin/theos.sh
 
-after-install::
+internal-after-install::
 	install.exec "killall -9 SpringBoard"
 
 SUBPROJECTS += spotifyofflinemode

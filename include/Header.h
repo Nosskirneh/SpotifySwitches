@@ -49,4 +49,5 @@ NSString *const repeatKey  = @"SpotifyRepeat";
 @property (weak, nonatomic) NSArray<SettingsSection *> *sections;
 @end
 
+
 #endif

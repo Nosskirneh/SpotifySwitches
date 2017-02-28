@@ -1,4 +1,5 @@
 #import "include/Header.h"
+#import "ConnectManager.h"
 
 SPCore *core;
 SPSession *session;
@@ -177,6 +178,13 @@ void doDisableRepeat(CFNotificationCenterRef center,
         if ([className isEqualToString:@"OfflineSettingsSection"]) {
             offlineViewController = self;
             isCurrentViewOfflineView = YES;
+            
+            //testing
+//            HBLogDebug(@"Testing");
+//            if (devices.count > 0) {
+//                [gaia activateDevice:devices[0] withCallback:nil];
+//                HBLogDebug(@"Setting device: %@", devices[0]);
+//            }
         }
     }
 }
@@ -225,5 +233,26 @@ void doDisableRepeat(CFNotificationCenterRef center,
     }
 
 }
+
 %end
 
+
+
+
+
+
+
+//------------------------
+//Testing
+
+// Save Spotify Connect devices
+%hook SPTGaiaDeviceManager
+
+- (void)rebuildDeviceList {
+    %orig;
+    ((ConnectManager *)[ConnectManager sharedInstance]).gaia = self;
+    ((ConnectManager *)[ConnectManager sharedInstance]).devices = [self devices];
+    HBLogDebug(@"%@", ((ConnectManager *)[ConnectManager sharedInstance]).gaia);
+}
+
+%end
