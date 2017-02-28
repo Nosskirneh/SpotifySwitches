@@ -1,8 +1,7 @@
 include $(THEOS)/makefiles/common.mk
 
 TWEAK_NAME = SpotifySwitches
-SpotifySwitches_FILES = Tweak.xm ConnectManager.xm Connectify.xm
-SpotifySwitches_LIBRARIES = activator
+SpotifySwitches_FILES = Tweak.xm
 
 include $(THEOS_MAKE_PATH)/tweak.mk
 
@@ -19,4 +18,5 @@ internal-after-install::
 SUBPROJECTS += spotifyofflinemode
 SUBPROJECTS += spotifyshuffle
 SUBPROJECTS += spotifyrepeat
+SUBPROJECTS += connectify
 include $(THEOS_MAKE_PATH)/aggregate.mk

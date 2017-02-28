@@ -16,10 +16,18 @@ NSString *const doToggleShuffleNotification = @"se.nosskirneh.spotifyswitches/do
 NSString *const doEnableRepeatNotification = @"se.nosskirneh.spotifyswitches/doEnableRepeat";
 NSString *const doDisableRepeatNotification = @"se.nosskirneh.spotifyswitches/doDisableRepeat";
 
+// Connect
+NSString *const doChangeConnectDeviceNotification = @"se.nosskirneh.spotifyswitches/doChangeConnectDevice";
+
+// Connectify settings
+NSMutableArray<NSString *> *deviceNames;
+
 // Lookup keys
-NSString *const offlineKey = @"SpotifyOfflineMode";
-NSString *const shuffleKey = @"SpotifyShuffle";
-NSString *const repeatKey  = @"SpotifyRepeat";
+NSString *const offlineKey = @"OfflineMode";
+NSString *const shuffleKey = @"Shuffle";
+NSString *const repeatKey  = @"Repeat";
+NSString *const devicesKey = @"ConnectDevices";
+NSString *const activeDeviceKey = @"ActiveConnectDevice";
 
 
 @interface SPCore : NSObject
@@ -47,6 +55,27 @@ NSString *const repeatKey  = @"SpotifyRepeat";
 
 @interface SettingsViewController : UIViewController
 @property (weak, nonatomic) NSArray<SettingsSection *> *sections;
+@end
+
+
+// Testing
+@interface SPTPlayerFeatureImplementation : NSObject
+- (id)gaiaDeviceManager;
+@end
+
+
+@interface SPTGaiaDevice : NSObject <NSCoding>
+@property (nonatomic, strong, readwrite) NSString *name;
+// not sure if these are needed:
+@property (nonatomic, strong, readwrite) NSString *attachId;
+@property (nonatomic, strong, readwrite) NSString *deviceId;
+@end
+
+
+@interface SPTGaiaDeviceManager : NSObject
+- (NSArray *)devices;
+- (id)activeDevice;
+- (void)activateDevice:(id)device withCallback:(id)callback;
 @end
 
 

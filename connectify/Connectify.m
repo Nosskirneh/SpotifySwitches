@@ -3,12 +3,14 @@
 @implementation Connectify
 
 UIActionSheet *connectSheet;
+NSMutableArray<NSString *> *devices;
 NSMutableArray *titles;
+NSString *activeDevice;
 
 + (void)load {
     NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
-    if ([[[NSBundle mainBundle] bundleIdentifier] isEqualToString:@"com.apple.springboard"]) // Do not load into Spotify
-        [[%c(LAActivator) sharedInstance] registerListener:[self new] forName:@"se.nosskirneh.connectify"];
+    if ([[[NSBundle mainBundle] bundleIdentifier] isEqualToString:@"com.apple.springboard"])
+        [(LAActivator *)[%c(LAActivator) sharedInstance] registerListener:[self new] forName:@"se.nosskirneh.connectify"];
     [pool release];
 }
 
@@ -17,6 +19,9 @@ NSMutableArray *titles;
     if (self) {
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(connectStartNotificationReceived:) name:@"Connectify.start" object:nil];
     }
+    // Init settings file
+    preferences = [[NSMutableDictionary alloc] initWithContentsOfFile:prefPath];
+    if (!preferences) preferences = [[NSMutableDictionary alloc] init];
     
     return self;
 }
@@ -54,24 +59,29 @@ NSMutableArray *titles;
         HBLogDebug(@"Already presenting an action sheet, so we'll ignore this subsequent call");
         return;
     }
+
+    // Implement this later
+//    SBApplication* app = [[SBApplicationController sharedInstance] applicationWithDisplayIdentifier:@"com.spotify.client"];
+//    int pid = [app pid];
+//    HBLogDebug(@"%d", pid);
     
-    titles = [[NSMutableArray alloc] initWithCapacity:((ConnectManager *)[ConnectManager sharedInstance]).devices.count+1];
+    // Update preferences
+    preferences  = [[NSMutableDictionary alloc] initWithContentsOfFile:prefPath];
+    deviceNames  = [preferences objectForKey:devicesKey];
+    activeDevice = [preferences objectForKey:activeDeviceKey];
+    titles = [[NSMutableArray alloc] initWithCapacity:deviceNames.count+1];
     
-    connectSheet = [[UIActionSheet alloc] initWithTitle:@"Spotify Connect\nDevices" delegate:self cancelButtonTitle:nil destructiveButtonTitle:nil otherButtonTitles:nil];
-    
-    HBLogDebug(@"%@", ((ConnectManager *)[ConnectManager sharedInstance]).gaia);
-    for (int i = 0; i < ((ConnectManager *)[ConnectManager sharedInstance]).devices.count; i++) {
-        SPTGaiaDevice* device = ((ConnectManager *)[ConnectManager sharedInstance]).devices[i];
-        
-        if ([((ConnectManager *)[ConnectManager sharedInstance]).gaia activeDevice] == device) {
-            [titles addObject:[@"●  " stringByAppendingString:device.name]];
+    connectSheet = [[UIActionSheet alloc] initWithTitle:@"Connectify\nDevices" delegate:self cancelButtonTitle:nil destructiveButtonTitle:nil otherButtonTitles:nil];
+
+    for (int i = 0; i < deviceNames.count; i++) {
+        if ([activeDevice isEqualToString:deviceNames[i]]) {
+            [titles addObject:[@"●  " stringByAppendingString:deviceNames[i]]];
         } else {
-            [titles addObject:device.name];
-            
-            [connectSheet addButtonWithTitle:titles[i]];
+            [titles addObject:deviceNames[i]];
         }
+        [connectSheet addButtonWithTitle:titles[i]];
     }
-    
+
     connectSheet.cancelButtonIndex = [connectSheet addButtonWithTitle:@"Cancel"];
     
     [connectSheet showInView:[UIApplication sharedApplication].keyWindow];
@@ -93,17 +103,24 @@ NSMutableArray *titles;
     if (buttonIndex < 0 || [buttonTitle isEqualToString:@"Cancel"]) { // Cancel
         HBLogDebug(@"Dismissing action sheet after cancel button press");
     } else {
-        SPTGaiaDevice *selectedDevice = ((ConnectManager *)[ConnectManager sharedInstance]).devices[[titles indexOfObject:buttonTitle]];
+        NSString *selectedDeviceName = deviceNames[[titles indexOfObject:buttonTitle]];
         
-        if ([((ConnectManager *)[ConnectManager sharedInstance]).gaia activeDevice] == selectedDevice) {
-            HBLogDebug(@"Trying to disconnected from: %@", selectedDevice);
-            [((ConnectManager *)[ConnectManager sharedInstance]).gaia activateDevice:nil withCallback:nil];
+        if ([activeDevice isEqualToString:selectedDeviceName]) {
+            HBLogDebug(@"Trying to disconnected from: %@", selectedDeviceName);
+            [preferences setObject:@"" forKey:activeDeviceKey];
         } else {
-            HBLogDebug(@"Trying to connect to: %@", selectedDevice);
-            [((ConnectManager *)[ConnectManager sharedInstance]).gaia activateDevice:selectedDevice withCallback:nil];
+            HBLogDebug(@"Trying to connect to: %@", selectedDeviceName);
+            [preferences setObject:selectedDeviceName forKey:activeDeviceKey];
         }
+        
+        // Save to .plist
+        if (![preferences writeToFile:prefPath atomically:YES]) {
+            HBLogError(@"Could not save preferences!");
+        }
+        // Send notification that device was changed
+        CFNotificationCenterPostNotification(CFNotificationCenterGetDarwinNotifyCenter(), (CFStringRef)doChangeConnectDeviceNotification, NULL, NULL, YES);
     }
-    ((ConnectManager *)[ConnectManager sharedInstance]).devices = nil;
+    devices = nil;
 }
 
 - (void)actionSheet:(UIActionSheet *)actionSheet didDismissWithButtonIndex:(NSInteger)buttonIndex {
@@ -113,8 +130,8 @@ NSMutableArray *titles;
 - (void)dealloc {
     [[NSNotificationCenter defaultCenter] removeObserver:self];
     
-    [((ConnectManager *)[ConnectManager sharedInstance]).devices release];
-    [titles release];
+//    [devices release];
+//    [titles release];
     [connectSheet release];
     
     [super dealloc];

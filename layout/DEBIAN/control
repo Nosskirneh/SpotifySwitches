@@ -1,10 +1,10 @@
 Package: se.nosskirneh.spotifyswitches
 Name: SpotifySwitches
-Description: Flipswitches for Spotify
-Version: 1.0.1b
+Description: Flipswitches and Activator Listener (Connect) for Spotify
+Version: 1.0.1b3
 Conflicts: se.nosskirneh.sos
 Priority: optional
-Section: Addons (Flipswitch)
+Section: Tweaks
 Architecture: iphoneos-arm
 Depends: mobilesubstrate , com.a3tweaks.flipswitch, libactivator
 Maintainer: Andreas Henriksson

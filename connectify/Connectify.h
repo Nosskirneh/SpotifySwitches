@@ -1,5 +1,5 @@
-#import "ConnectManager.h"
 #import <libactivator/libactivator.h>
+#import "../include/Header.h"
 
 @interface UIWindow (Private)
 - (void)_setSecure:(BOOL)arg1;

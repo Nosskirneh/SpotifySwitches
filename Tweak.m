@@ -1,9 +1,9 @@
 #import "include/Header.h"
-#import "ConnectManager.h"
 
 SPCore *core;
 SPSession *session;
 SPTNowPlayingPlaybackController *playbackController;
+SPTGaiaDeviceManager *gaia;
 SettingsViewController *offlineViewController;
 BOOL isCurrentViewOfflineView;
 
@@ -34,7 +34,7 @@ void doToggleShuffle(CFNotificationCenterRef center,
                      const void *object,
                      CFDictionaryRef userInfo) {
     
-    // Update setting
+    // Update state
     preferences = [[NSMutableDictionary alloc] initWithContentsOfFile:prefPath];
     BOOL next = ![[preferences objectForKey:shuffleKey] boolValue];
     [playbackController setGlobalShuffleMode:next];
@@ -55,6 +55,29 @@ void doDisableRepeat(CFNotificationCenterRef center,
                     const void *object,
                     CFDictionaryRef userInfo) {
     [playbackController setRepeatMode:0];
+}
+
+
+void doChangeConnectDevice(CFNotificationCenterRef center,
+                           void *observer,
+                           CFStringRef name,
+                           const void *object,
+                           CFDictionaryRef userInfo) {
+    // Update device
+    preferences = [[NSMutableDictionary alloc] initWithContentsOfFile:prefPath];
+    NSString *deviceName = [preferences objectForKey:activeDeviceKey];
+    SPTGaiaDevice *device;
+    for (device in [gaia devices]) {
+        if ([device.name isEqualToString:deviceName]) {
+            [gaia activateDevice:device withCallback:nil];
+            HBLogDebug(@"Sending device %@ to Gaia", device);
+            return;
+        }
+    }
+
+     // No matching names,
+     HBLogDebug(@"Found no matching device names, disconnecting");
+     [gaia activateDevice:nil withCallback:nil];
 }
 
 
@@ -79,6 +102,9 @@ void doDisableRepeat(CFNotificationCenterRef center,
     // Repeat:
     CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, &doEnableRepeat, CFStringRef(doEnableRepeatNotification), NULL, 0);
     CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, &doDisableRepeat, CFStringRef(doDisableRepeatNotification), NULL, 0);
+    
+    // Connect:
+    CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, &doChangeConnectDevice, CFStringRef(doChangeConnectDeviceNotification), NULL, 0);
     
 
     // Save core
@@ -178,13 +204,6 @@ void doDisableRepeat(CFNotificationCenterRef center,
         if ([className isEqualToString:@"OfflineSettingsSection"]) {
             offlineViewController = self;
             isCurrentViewOfflineView = YES;
-            
-            //testing
-//            HBLogDebug(@"Testing");
-//            if (devices.count > 0) {
-//                [gaia activateDevice:devices[0] withCallback:nil];
-//                HBLogDebug(@"Setting device: %@", devices[0]);
-//            }
         }
     }
 }
@@ -240,19 +259,41 @@ void doDisableRepeat(CFNotificationCenterRef center,
 
 
 
-
-
-//------------------------
-//Testing
-
 // Save Spotify Connect devices
+
+%hook SPTPlayerFeatureImplementation
+
+- (void)loadGaia {
+    %orig;
+    gaia = [self gaiaDeviceManager];
+}
+               
+%end
+
+
 %hook SPTGaiaDeviceManager
 
 - (void)rebuildDeviceList {
     %orig;
-    ((ConnectManager *)[ConnectManager sharedInstance]).gaia = self;
-    ((ConnectManager *)[ConnectManager sharedInstance]).devices = [self devices];
-    HBLogDebug(@"%@", ((ConnectManager *)[ConnectManager sharedInstance]).gaia);
+    if ([[self devices] count] > 0) {
+        deviceNames = [[NSMutableArray alloc] init];
+        for (SPTGaiaDevice *device in self.devices) {
+            [deviceNames addObject:device.name];
+        }
+        [preferences setObject:deviceNames forKey:devicesKey];
+        [deviceNames release];
+    }
+
+    SPTGaiaDevice *currentDevice = [self activeDevice];
+    if (currentDevice != nil) {
+        [preferences setObject:currentDevice.name forKey:activeDeviceKey];
+    }
+    
+    // Save to .plist    
+    if (![preferences writeToFile:prefPath atomically:YES]) {
+        HBLogError(@"Could not save preferences!");
+    }
+    
 }
 
 %end
