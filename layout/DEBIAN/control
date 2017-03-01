@@ -1,7 +1,7 @@
 Package: se.nosskirneh.spotifyswitches
 Name: SpotifySwitches
-Description: Flipswitches and Activator Listener (Connect) for Spotify
-Version: 1.0.1b5
+Description: Flipswitches and more for Spotify.
+Version: 1.1.0b1
 Conflicts: se.nosskirneh.sos
 Priority: optional
 Section: Tweaks

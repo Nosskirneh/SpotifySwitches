@@ -296,7 +296,21 @@ void doChangeConnectDevice(CFNotificationCenterRef center,
     if (![preferences writeToFile:prefPath atomically:YES]) {
         HBLogError(@"Could not save preferences!");
     }
-    
+}
+
+- (void)activateDevice:(SPTGaiaDevice *)device withCallback:(id)arg {
+    %orig;
+    HBLogDebug(@"Device was changed");
+    if (device != nil) {
+        [preferences setObject:device.name forKey:activeDeviceKey];
+    } else {
+        [preferences setObject:@"nil" forKey:activeDeviceKey];
+    }
+
+    // Save to .plist
+    if (![preferences writeToFile:prefPath atomically:YES]) {
+        HBLogError(@"Could not save preferences!");
+    }
 }
 
 %end
