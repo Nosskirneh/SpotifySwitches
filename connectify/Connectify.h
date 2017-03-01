@@ -1,4 +1,7 @@
 #import <libactivator/libactivator.h>
+#import <SpringBoard/SBApplication.h>
+#import <SpringBoard/SBApplicationController.h>
+#import <UIKit/UIApplication.h>
 #import "../include/Header.h"
 
 @interface UIWindow (Private)

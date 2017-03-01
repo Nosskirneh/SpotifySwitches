@@ -61,25 +61,29 @@ NSString *activeDevice;
     }
 
     // Implement this later
-//    SBApplication* app = [[SBApplicationController sharedInstance] applicationWithDisplayIdentifier:@"com.spotify.client"];
-//    int pid = [app pid];
-//    HBLogDebug(@"%d", pid);
-    
-    // Update preferences
-    preferences  = [[NSMutableDictionary alloc] initWithContentsOfFile:prefPath];
-    deviceNames  = [preferences objectForKey:devicesKey];
-    activeDevice = [preferences objectForKey:activeDeviceKey];
-    titles = [[NSMutableArray alloc] initWithCapacity:deviceNames.count+1];
+    SBApplication* app = [[%c(SBApplicationController) sharedInstance] applicationWithBundleIdentifier:spotifyBundleIdentifier];
+    HBLogDebug(@"%@", app);
+    int pid = [app pid];
     
     connectSheet = [[UIActionSheet alloc] initWithTitle:@"Connectify\nDevices" delegate:self cancelButtonTitle:nil destructiveButtonTitle:nil otherButtonTitles:nil];
-
-    for (int i = 0; i < deviceNames.count; i++) {
-        if ([activeDevice isEqualToString:deviceNames[i]]) {
-            [titles addObject:[@"●  " stringByAppendingString:deviceNames[i]]];
-        } else {
-            [titles addObject:deviceNames[i]];
+    
+    if (pid >= 0) { // Spotify is running
+        // Update preferences
+        preferences  = [[NSMutableDictionary alloc] initWithContentsOfFile:prefPath];
+        deviceNames  = [preferences objectForKey:devicesKey];
+        activeDevice = [preferences objectForKey:activeDeviceKey];
+        titles = [[NSMutableArray alloc] initWithCapacity:deviceNames.count+1];
+        
+        for (int i = 0; i < deviceNames.count; i++) {
+            if ([activeDevice isEqualToString:deviceNames[i]]) {
+                [titles addObject:[@"●  " stringByAppendingString:deviceNames[i]]];
+            } else {
+                [titles addObject:deviceNames[i]];
+            }
+            [connectSheet addButtonWithTitle:titles[i]];
         }
-        [connectSheet addButtonWithTitle:titles[i]];
+    } else {
+        connectSheet.destructiveButtonIndex = [connectSheet addButtonWithTitle:@"Launch Spotify"];
     }
 
     connectSheet.cancelButtonIndex = [connectSheet addButtonWithTitle:@"Cancel"];
@@ -102,6 +106,9 @@ NSString *activeDevice;
     
     if (buttonIndex < 0 || [buttonTitle isEqualToString:@"Cancel"]) { // Cancel
         HBLogDebug(@"Dismissing action sheet after cancel button press");
+    } else if ([buttonTitle isEqualToString:@"Launch Spotify"]) { // Launch Spotify
+        HBLogDebug(@"Trying to launch Spotify");
+        [[%c(UIApplication) sharedApplication] launchApplicationWithIdentifier:spotifyBundleIdentifier suspended:NO];
     } else {
         NSString *selectedDeviceName = deviceNames[[titles indexOfObject:buttonTitle]];
         

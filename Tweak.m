@@ -145,7 +145,7 @@ void doChangeConnectDevice(CFNotificationCenterRef center,
     %orig;
 
     // Set default values on app launch
-    // Add settings pane to determine which one should be used.
+    // Perhaps add settings pane to determine which one should be used.
     // Simply update flipswitch values to Spotify defaults
 //    if (session.isOffline) {
 //        [preferences setObject:[NSNumber numberWithBool:YES] forKey:offlineKey];
@@ -155,6 +155,9 @@ void doChangeConnectDevice(CFNotificationCenterRef center,
 //        [preferences setObject:[NSNumber numberWithBool:YES] forKey:offlineKey];
 //        
 //    }
+    
+    // Set activeDevice to null
+    [preferences setObject:@"" forKey:activeDeviceKey];
     
     // Override Spotify values to current flipswitch values
     [playbackController setRepeatMode:[[preferences objectForKey:repeatKey] intValue]];

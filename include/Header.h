@@ -29,6 +29,9 @@ NSString *const repeatKey  = @"Repeat";
 NSString *const devicesKey = @"ConnectDevices";
 NSString *const activeDeviceKey = @"ActiveConnectDevice";
 
+// Other
+NSString *const spotifyBundleIdentifier = @"com.spotify.client";
+
 
 @interface SPCore : NSObject
 - (void)setForcedOffline:(BOOL)arg;
