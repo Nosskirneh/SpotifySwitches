@@ -7,6 +7,6 @@ Conflicts: se.nosskirneh.sos
 Priority: optional
 Section: Tweaks
 Architecture: iphoneos-arm
-Depends: mobilesubstrate , com.a3tweaks.flipswitch, libactivator
+Depends: firmware (>= 8.0), mobilesubstrate (>= 0.9.5000), com.a3tweaks.flipswitch, libactivator
 Maintainer: Andreas Henriksson
 Author: Andreas Henriksson
