@@ -1,13 +1,12 @@
 #import "include/Header.h"
 
 SPCore *core;
-SPSession *session;
 SPTNowPlayingPlaybackController *playbackController;
 SPTGaiaDeviceManager *gaia;
 SettingsViewController *offlineViewController;
 BOOL isCurrentViewOfflineView;
 
-// What should happen on triggered flipswitch event?
+// Notifications methods
 // Offline
 void doEnableOfflineMode(CFNotificationCenterRef center,
                      void *observer,
@@ -57,7 +56,7 @@ void doDisableRepeat(CFNotificationCenterRef center,
     [playbackController setRepeatMode:0];
 }
 
-
+// Connect
 void doChangeConnectDevice(CFNotificationCenterRef center,
                            void *observer,
                            CFStringRef name,
@@ -75,7 +74,7 @@ void doChangeConnectDevice(CFNotificationCenterRef center,
         }
     }
 
-     // No matching names,
+     // No matching names
      HBLogDebug(@"Found no matching device names, disconnecting");
      [gaia activateDevice:nil withCallback:nil];
 }
@@ -129,32 +128,11 @@ void doChangeConnectDevice(CFNotificationCenterRef center,
 %end
 
 
-// Has propertes isOffline and isOnline. Used to set start values.
-%hook SPSession
-
-- (id)initWithCore:(id)arg1 coreCreateOptions:(id)arg2 session:(id)arg3 clientVersionString:(id)arg4 acceptLanguages:(id)arg5 {
-    return session = %orig;
-}
-
-%end
-
-
 %hook SPBarViewController
 
+// A little later in app launch
 - (void)viewDidLoad {
     %orig;
-
-    // Set default values on app launch
-    // Perhaps add settings pane to determine which one should be used.
-    // Simply update flipswitch values to Spotify defaults
-//    if (session.isOffline) {
-//        [preferences setObject:[NSNumber numberWithBool:YES] forKey:offlineKey];
-//        [preferences setObject:[NSNumber numberWithBool:NO] forKey:shuffleKey];
-//
-//    } else {
-//        [preferences setObject:[NSNumber numberWithBool:YES] forKey:offlineKey];
-//        
-//    }
     
     // Set activeDevice to null
     [preferences setObject:@"" forKey:activeDeviceKey];
@@ -175,10 +153,12 @@ void doChangeConnectDevice(CFNotificationCenterRef center,
 
 %hook SPTNowPlayingPlaybackController
 
+// Saves controller
 - (id)initWithPlayer:(id)arg1 trackPosition:(id)arg2 adsManager:(id)arg3 trackMetadataQueue:(id)arg4 {
     return playbackController = %orig;
 }
 
+// Method that changes repeat mode
 - (void)setRepeatMode:(NSUInteger)value {
     %orig;
 
@@ -193,9 +173,9 @@ void doChangeConnectDevice(CFNotificationCenterRef center,
 
 
 
-// Prevents crash
 %hook SettingsViewController
 
+// Prevents crash at Offline view in Settings
 - (void)viewDidLayoutSubviews {
     %orig;
     if (self.sections.count >= 1) {
@@ -207,6 +187,9 @@ void doChangeConnectDevice(CFNotificationCenterRef center,
         if ([className isEqualToString:@"OfflineSettingsSection"]) {
             offlineViewController = self;
             isCurrentViewOfflineView = YES;
+            
+            // Do testing here
+            //HBLogDebug(@"Playlists: %@", [playlistContainer actualPlaylists]);
         }
     }
 }
@@ -214,9 +197,9 @@ void doChangeConnectDevice(CFNotificationCenterRef center,
 %end
 
 
-// Reset state after going back from "Playback" setting view
 %hook SPNavigationController
 
+// Reset state after going back from "Playback" setting view
 - (void)viewWillLayoutSubviews {
     %orig;
     offlineViewController = nil;
@@ -226,25 +209,29 @@ void doChangeConnectDevice(CFNotificationCenterRef center,
 %end
 
 
-// Saves updated Offline Mode value (both through flipswitch and manually)
 %hook Adjust
 
+// Saves updated Offline Mode value (both through flipswitch and manually)
 - (void)setOfflineMode:(BOOL)arg {
+    %orig;
+
+    // Update flipswitch state
     [preferences setObject:[NSNumber numberWithBool:arg] forKey:offlineKey];
+    // Update Connectify settings
+    [preferences setObject:@"" forKey:activeDeviceKey];
+    [preferences setObject:@[] forKey:devicesKey];
     
     if (![preferences writeToFile:prefPath atomically:YES]) {
         HBLogError(@"Could not save preferences!");
     }
-
-    %orig;
 }
 
 %end
 
 
-// Saves updated shuffle value
 %hook SPTNowPlayingMusicHeadUnitViewController
 
+// Saves updated shuffle value
 - (void)shuffleButtonPressed:(id)arg {
     %orig;
     BOOL current = [[preferences objectForKey:shuffleKey] boolValue];
@@ -260,24 +247,25 @@ void doChangeConnectDevice(CFNotificationCenterRef center,
 
 
 
-
-
-// Save Spotify Connect devices
+// Connect classes
 
 %hook SPTPlayerFeatureImplementation
 
+// Save Spotify Connect Mananger
 - (void)loadGaia {
     %orig;
     gaia = [self gaiaDeviceManager];
 }
-               
+
 %end
 
 
 %hook SPTGaiaDeviceManager
 
+// Save Spotify Connect devices
 - (void)rebuildDeviceList {
     %orig;
+    HBLogDebug(@"Building device list...")
     if ([[self devices] count] > 0) {
         deviceNames = [[NSMutableArray alloc] init];
         for (SPTGaiaDevice *device in self.devices) {
@@ -298,13 +286,14 @@ void doChangeConnectDevice(CFNotificationCenterRef center,
     }
 }
 
+// Method that changes Connect device
 - (void)activateDevice:(SPTGaiaDevice *)device withCallback:(id)arg {
     %orig;
     HBLogDebug(@"Device was changed");
     if (device != nil) {
         [preferences setObject:device.name forKey:activeDeviceKey];
     } else {
-        [preferences setObject:@"nil" forKey:activeDeviceKey];
+        [preferences setObject:@"" forKey:activeDeviceKey];
     }
 
     // Save to .plist

@@ -38,16 +38,8 @@ NSString *const spotifyBundleIdentifier = @"com.spotify.client";
 @end
 
 
-@interface SPSession : NSObject
-@property (nonatomic, assign, readwrite) BOOL isOffline;
-@property (nonatomic, assign, readwrite) BOOL isOnline;
-@end
-
-
 @interface SPTNowPlayingPlaybackController : NSObject
 - (void)setGlobalShuffleMode:(BOOL)arg;
-- (BOOL)isShuffling;
-//- (void)toggleRepeatMode;
 - (void)setRepeatMode:(NSUInteger)value;
 @end
 
@@ -61,7 +53,6 @@ NSString *const spotifyBundleIdentifier = @"com.spotify.client";
 @end
 
 
-// Testing
 @interface SPTPlayerFeatureImplementation : NSObject
 - (id)gaiaDeviceManager;
 @end
@@ -69,9 +60,6 @@ NSString *const spotifyBundleIdentifier = @"com.spotify.client";
 
 @interface SPTGaiaDevice : NSObject <NSCoding>
 @property (nonatomic, strong, readwrite) NSString *name;
-// not sure if these are needed:
-@property (nonatomic, strong, readwrite) NSString *attachId;
-@property (nonatomic, strong, readwrite) NSString *deviceId;
 @end
 
 

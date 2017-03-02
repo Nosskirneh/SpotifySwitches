@@ -2,8 +2,8 @@
 
 @implementation Connectify
 
+Connectify *connectify;
 UIActionSheet *connectSheet;
-NSMutableArray<NSString *> *devices;
 NSMutableArray *titles;
 NSString *activeDevice;
 
@@ -16,9 +16,11 @@ NSString *activeDevice;
 
 - (id)init {
     self = [super init];
+    connectify = self;
     if (self) {
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(connectStartNotificationReceived:) name:@"Connectify.start" object:nil];
     }
+
     // Init settings file
     preferences = [[NSMutableDictionary alloc] initWithContentsOfFile:prefPath];
     if (!preferences) preferences = [[NSMutableDictionary alloc] init];
@@ -60,9 +62,7 @@ NSString *activeDevice;
         return;
     }
 
-    // Implement this later
     SBApplication* app = [[%c(SBApplicationController) sharedInstance] applicationWithBundleIdentifier:spotifyBundleIdentifier];
-    HBLogDebug(@"%@", app);
     int pid = [app pid];
     
     connectSheet = [[UIActionSheet alloc] initWithTitle:@"Connectify\nDevices" delegate:self cancelButtonTitle:nil destructiveButtonTitle:nil otherButtonTitles:nil];
@@ -70,6 +70,12 @@ NSString *activeDevice;
     if (pid >= 0) { // Spotify is running
         // Update preferences
         preferences  = [[NSMutableDictionary alloc] initWithContentsOfFile:prefPath];
+        bool offline = [[preferences objectForKey:offlineKey] boolValue];
+
+        if (offline) {
+            connectSheet.destructiveButtonIndex = [connectSheet addButtonWithTitle:@"Go online"];
+        }
+
         deviceNames  = [preferences objectForKey:devicesKey];
         activeDevice = [preferences objectForKey:activeDeviceKey];
         titles = [[NSMutableArray alloc] initWithCapacity:deviceNames.count+1];
@@ -89,7 +95,6 @@ NSString *activeDevice;
     connectSheet.cancelButtonIndex = [connectSheet addButtonWithTitle:@"Cancel"];
     
     [connectSheet showInView:[UIApplication sharedApplication].keyWindow];
-    HBLogDebug(@"Notification received, presented action sheet (%@) from window: %@", connectSheet, [UIApplication sharedApplication].keyWindow);
 }
 
 - (void)dismiss {
@@ -102,13 +107,15 @@ NSString *activeDevice;
 
 - (void)actionSheet:(UIActionSheet *)actionSheet clickedButtonAtIndex:(NSInteger)buttonIndex {
     NSString *buttonTitle = [actionSheet buttonTitleAtIndex:buttonIndex];
-    HBLogDebug(@"actionSheet:<%@>clickedButtonAtIndex:<%i>, buttonTitle:%@", actionSheet, (int)buttonIndex, buttonTitle);
     
     if (buttonIndex < 0 || [buttonTitle isEqualToString:@"Cancel"]) { // Cancel
         HBLogDebug(@"Dismissing action sheet after cancel button press");
     } else if ([buttonTitle isEqualToString:@"Launch Spotify"]) { // Launch Spotify
         HBLogDebug(@"Trying to launch Spotify");
         [[%c(UIApplication) sharedApplication] launchApplicationWithIdentifier:spotifyBundleIdentifier suspended:NO];
+    } else if ([buttonTitle isEqualToString:@"Go online"]) { // Go online
+        HBLogDebug(@"Trying to go online");
+        CFNotificationCenterPostNotification(CFNotificationCenterGetDarwinNotifyCenter(), (CFStringRef)doDisableOfflineModeNotification, NULL, NULL, YES);
     } else {
         NSString *selectedDeviceName = deviceNames[[titles indexOfObject:buttonTitle]];
         
@@ -127,7 +134,6 @@ NSString *activeDevice;
         // Send notification that device was changed
         CFNotificationCenterPostNotification(CFNotificationCenterGetDarwinNotifyCenter(), (CFStringRef)doChangeConnectDeviceNotification, NULL, NULL, YES);
     }
-    devices = nil;
 }
 
 - (void)actionSheet:(UIActionSheet *)actionSheet didDismissWithButtonIndex:(NSInteger)buttonIndex {
@@ -137,8 +143,8 @@ NSString *activeDevice;
 - (void)dealloc {
     [[NSNotificationCenter defaultCenter] removeObserver:self];
     
-//    [devices release];
-//    [titles release];
+    [deviceNames release];
+    [titles release];
     [connectSheet release];
     
     [super dealloc];

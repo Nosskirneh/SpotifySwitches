@@ -1,7 +1,8 @@
 Package: se.nosskirneh.spotifyswitches
 Name: SpotifySwitches
 Description: Flipswitches and more for Spotify.
-Version: 1.1.0b1
+Depiction: https://andreashenriksson.se/repo/depictions/?p=se.nosskirneh.spotifyswitches
+Version: 1.1.1b1
 Conflicts: se.nosskirneh.sos
 Priority: optional
 Section: Tweaks
