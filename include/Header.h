@@ -20,7 +20,11 @@ NSString *const doDisableRepeatNotification = @"se.nosskirneh.spotifyswitches/do
 NSString *const doChangeConnectDeviceNotification = @"se.nosskirneh.spotifyswitches/doChangeConnectDevice";
 
 // Add to playlist
-NSString *const addCurrentTrackNotification = @"se.nosskirneh.spotifyswitches/addCurrentTrack";
+NSString *const addCurrentTrackToPlaylistNotification = @"se.nosskirneh.spotifyswitches/addCurrentTrackToPlaylist";
+
+// Add to collection
+NSString *const addCurrentTrackToCollectionNotification = @"se.nosskirneh.spotifyswitches/addCurrentTrackToCollection";
+
 
 
 // Connectify and AddToPlaylist arrays
@@ -106,15 +110,15 @@ NSString *const spotifyBundleIdentifier = @"com.spotify.client";
 @end
 
 
-//@interface SPTNowPlayingAuxiliaryActionsModel : NSObject
-//- (BOOL)isInCollection;
-//- (void)addToCollection;
-//- (void)removeFromCollection;
-//@end
-
-
 @interface SPTStatefulPlayer : NSObject
 - (id)currentTrack;
+@end
+
+
+@interface SPTNowPlayingAuxiliaryActionsModel : NSObject
+- (BOOL)isInCollection;
+- (void)addToCollection;
+- (void)removeFromCollection;
 @end
 
 

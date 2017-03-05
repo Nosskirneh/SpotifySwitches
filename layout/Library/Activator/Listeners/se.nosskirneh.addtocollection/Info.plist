@@ -1,0 +1,5 @@
+{
+    title = "Add to Spotify collection";
+    description = "Add curerent track in Spotify to collection";
+    "compatible-modes" = ("springboard", "application", "lockscreen");
+}

@@ -111,7 +111,7 @@ NSString *chosenPlaylist;
             HBLogError(@"Could not save preferences!");
         }
         // Send notification that a playlist was choosen
-        CFNotificationCenterPostNotification(CFNotificationCenterGetDarwinNotifyCenter(), (CFStringRef)addCurrentTrackNotification, NULL, NULL, YES);
+        CFNotificationCenterPostNotification(CFNotificationCenterGetDarwinNotifyCenter(), (CFStringRef)addCurrentTrackToPlaylistNotification, NULL, NULL, YES);
     }
 }
 

@@ -11,11 +11,11 @@ SPCore *core;
 SettingsViewController *offlineViewController;
 BOOL isCurrentViewOfflineView;
 
-// Save to playlist/library
+// Save to playlist/collection
 SPTStatefulPlayer *statefulPlayer;
 SPPlaylistContainer *playlistContainer;
 SPPlaylistContainerCallbacksHolder *callbacksHolder;
-//SPTNowPlayingAuxiliaryActionsModel *auxActionModel;
+SPTNowPlayingAuxiliaryActionsModel *auxActionModel;
 
 // Notifications methods
 // Offline
@@ -91,7 +91,7 @@ void doChangeConnectDevice(CFNotificationCenterRef center,
 }
 
 // Add to playlist
-void addCurrentTrack(CFNotificationCenterRef center,
+void addCurrentTrackToPlaylist(CFNotificationCenterRef center,
                            void *observer,
                            CFStringRef name,
                            const void *object,
@@ -109,6 +109,16 @@ void addCurrentTrack(CFNotificationCenterRef center,
                 [tracks release];
         }
     }
+}
+
+// Add to collection
+void addCurrentTrackToCollection(CFNotificationCenterRef center,
+                               void *observer,
+                               CFStringRef name,
+                               const void *object,
+                               CFDictionaryRef userInfo) {
+    BOOL inCollection = [auxActionModel isInCollection];
+    inCollection ? [auxActionModel removeFromCollection] : [auxActionModel addToCollection];
 }
 
 
@@ -138,7 +148,10 @@ void addCurrentTrack(CFNotificationCenterRef center,
     CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, &doChangeConnectDevice, CFStringRef(doChangeConnectDeviceNotification), NULL, 0);
         
     // Add to playlist:
-    CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, &addCurrentTrack, CFStringRef(addCurrentTrackNotification), NULL, 0);
+    CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, &addCurrentTrackToPlaylist, CFStringRef(addCurrentTrackToPlaylistNotification), NULL, 0);
+        
+    // Add to collection:
+    CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, &addCurrentTrackToCollection, CFStringRef(addCurrentTrackToCollectionNotification), NULL, 0);
     
 
     // Save core
@@ -457,15 +470,11 @@ BOOL didRetrieveCallbacksHolder = NO;
 %end
 
 
+// Class used to save track to library
+%hook SPTNowPlayingAuxiliaryActionsModel
 
+- (id)initWithCollectionPlatform:(id)arg1 adsManager:(id)arg2 trackMetadataQueue:(id)arg3 showsFollowService:(id)arg4 {
+    return auxActionModel = %orig;
+}
 
-//// Class used to save track to library
-//%hook SPTNowPlayingAuxiliaryActionsModel
-//
-//- (id)initWithCollectionPlatform:(id)arg1 adsManager:(id)arg2 trackMetadataQueue:(id)arg3 showsFollowService:(id)arg4 {
-//    HBLogDebug(@"Found auxActionModel!");
-//
-//    return auxActionModel = %orig;
-//}
-//
-//%end
+%end
