@@ -13,9 +13,9 @@ BOOL isCurrentViewOfflineView;
 
 // Save to playlist/library
 SPTStatefulPlayer *statefulPlayer;
-SPTNowPlayingAuxiliaryActionsModel *auxActionModel;
 SPPlaylistContainer *playlistContainer;
 SPPlaylistContainerCallbacksHolder *callbacksHolder;
+//SPTNowPlayingAuxiliaryActionsModel *auxActionModel;
 
 // Notifications methods
 // Offline
@@ -199,8 +199,6 @@ BOOL didRetrievePlaylists = NO;
         
         // Retrieve playlists
         [callbacksHolder retrievePlaylists];
-        
-        HBLogDebug(@"playlists: %@", playlists);
     }
 }
 
@@ -358,8 +356,8 @@ BOOL didRetrievePlaylists = NO;
 
 
 
+// Add to playlist
 
-// Testing
 BOOL didRetrieveCallbacksHolder = NO;
 
 %hook SPPlaylistContainerCallbacksHolder
@@ -367,7 +365,6 @@ BOOL didRetrieveCallbacksHolder = NO;
 - (id)initWithObjc:(id)arg {
     if (!didRetrieveCallbacksHolder) {
         didRetrieveCallbacksHolder = YES;
-        HBLogDebug(@"Made a new ContainerCallbacksHolder!");
         return callbacksHolder = %orig;
     }
     
@@ -378,7 +375,6 @@ BOOL didRetrieveCallbacksHolder = NO;
 - (void)retrievePlaylists {
     HBLogDebug(@"Updating playlists...");
     playlistContainer = [self playlists];
-    HBLogDebug(@"playlistContainer: %@", playlistContainer);
     playlists = [[NSMutableArray alloc] init];
 
     for (SPPlaylist *list in playlistContainer.actualPlaylists) {
@@ -414,65 +410,26 @@ BOOL didRetrieveCallbacksHolder = NO;
     playlists = [preferences objectForKey:playlistsKey];
     for (int i = 0; i < playlists.count; i++) {
         NSMutableDictionary *playlist = [playlists objectAtIndex:i];
-        HBLogDebug(@"URL: %@", [playlist objectForKey:@"URL"])
         if ([[playlist objectForKey:@"URL"] isEqualToString:[url absoluteString]]) {
             [playlists removeObjectAtIndex:i];
             HBLogDebug(@"Removed a playlist!");
-            HBLogDebug(@"playlists: %@", [preferences objectForKey:playlistsKey]);
         }
     }
 }
 
-// this method is never called, which is problametic because if user change
-// name on one playlist, the Activator listener wouldn't know :/
-- (void)renamePlaylistURL:(id)arg1 name:(id)arg2 completion:(id)arg3 {
-    %orig;
-    HBLogDebug(@"rename playlist: %@ to %@", arg1, arg2);
-}
-
-//- (void)createPlaylistWithName:(id)arg1 inFolderURL:(id)arg2 completion:(id)arg3 {
-//    %orig;
-//    HBLogDebug(@"createPlaylist 2");
-//}
-
 %end
 
+
+// Update playlists list on change of "Recently Played" section
 %hook SPTRecentlyPlayedEntityList
 
 - (void)recentlyPlayedModelDidReload:(id)arg {
     %orig;
-    HBLogDebug(@"recentlyPlayedModelDidReload!");
     // Update playlists
     [callbacksHolder retrievePlaylists];
-    
-    HBLogDebug(@"playlists: %@", [preferences objectForKey:playlistsKey]);
 }
 
 %end
-
-
-%hook SPTPlaylistCosmosViewModel
-
-- (void)renamePlatlist:(id)arg1 onCompletion:(id)arg2 {
-    %orig;
-    HBLogDebug(@"Renamed a playlist!");
-}
-
-%end
-
-
-
-
-//// Class used to save track to library
-//%hook SPTNowPlayingAuxiliaryActionsModel
-//
-//- (id)initWithCollectionPlatform:(id)arg1 adsManager:(id)arg2 trackMetadataQueue:(id)arg3 showsFollowService:(id)arg4 {
-//    HBLogDebug(@"Found auxActionModel!");
-//
-//    return auxActionModel = %orig;
-//}
-//
-//%end
 
 
 // Class that stores current track
@@ -498,3 +455,17 @@ BOOL didRetrieveCallbacksHolder = NO;
 }
 
 %end
+
+
+
+
+//// Class used to save track to library
+//%hook SPTNowPlayingAuxiliaryActionsModel
+//
+//- (id)initWithCollectionPlatform:(id)arg1 adsManager:(id)arg2 trackMetadataQueue:(id)arg3 showsFollowService:(id)arg4 {
+//    HBLogDebug(@"Found auxActionModel!");
+//
+//    return auxActionModel = %orig;
+//}
+//
+//%end

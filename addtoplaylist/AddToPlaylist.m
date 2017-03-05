@@ -101,7 +101,7 @@ NSString *chosenPlaylist;
         [[%c(UIApplication) sharedApplication] launchApplicationWithIdentifier:spotifyBundleIdentifier suspended:NO];
     } else {
         //NSString *selectedPlaylistName = playlistNames[[playlistNames indexOfObject:buttonTitle]];
-        NSString *selectedPlaylistName = [playlists[buttonIndex] objectForKey:@"name"];;
+        NSString *selectedPlaylistName = [playlists[buttonIndex] objectForKey:@"name"];
         
         HBLogDebug(@"Trying to add current track to: %@", selectedPlaylistName);
         [preferences setObject:selectedPlaylistName forKey:chosenPlaylistKey];
