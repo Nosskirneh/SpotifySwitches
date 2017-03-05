@@ -2,7 +2,6 @@
 
 @implementation Connectify
 
-Connectify *connectify;
 UIActionSheet *connectSheet;
 NSMutableArray *titles;
 NSString *activeDevice;
@@ -16,7 +15,7 @@ NSString *activeDevice;
 
 - (id)init {
     self = [super init];
-    connectify = self;
+
     if (self) {
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(connectStartNotificationReceived:) name:@"Connectify.start" object:nil];
     }
@@ -31,23 +30,18 @@ NSString *activeDevice;
 // Called when the user-defined action is recognized, shows selection sheet
 - (void)activator:(LAActivator *)activator receiveEvent:(LAEvent *)event {
     [event setHandled:YES];
-    
-    HBLogDebug(@"Listener received call to (activator:receiveEvent:)");
     [self connectStartNotificationReceived:nil];
 }
 
 - (void)activator:(LAActivator *)activator abortEvent:(LAEvent *)event {
-    HBLogDebug(@"Listener received call to (activator:abortEvent:)");
     [self dismiss];
 }
 
 - (void)activator:(LAActivator *)activator otherListenerDidHandleEvent:(LAEvent *)event {
-    HBLogDebug(@"Listener received call to (activator:otherListenerDidHandleEvent:)");
     [self dismiss];
 }
 
 - (void)activator:(LAActivator *)activator receiveDeactivateEvent:(LAEvent *)event {
-    HBLogDebug(@"Listener received call to (activator:receiveDeactivateEvent:)");
     [self dismiss];
 }
 

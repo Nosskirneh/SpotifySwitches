@@ -1,10 +1,21 @@
 #import "include/Header.h"
 
-SPCore *core;
-SPTNowPlayingPlaybackController *playbackController;
+// Connect
 SPTGaiaDeviceManager *gaia;
+
+// Shuffle and repeat
+SPTNowPlayingPlaybackController *playbackController;
+
+// Offline toggle
+SPCore *core;
 SettingsViewController *offlineViewController;
 BOOL isCurrentViewOfflineView;
+
+// Save to playlist/library
+SPTStatefulPlayer *statefulPlayer;
+SPTNowPlayingAuxiliaryActionsModel *auxActionModel;
+SPPlaylistContainer *playlistContainer;
+SPPlaylistContainerCallbacksHolder *callbacksHolder;
 
 // Notifications methods
 // Offline
@@ -65,8 +76,8 @@ void doChangeConnectDevice(CFNotificationCenterRef center,
     // Update device
     preferences = [[NSMutableDictionary alloc] initWithContentsOfFile:prefPath];
     NSString *deviceName = [preferences objectForKey:activeDeviceKey];
-    SPTGaiaDevice *device;
-    for (device in [gaia devices]) {
+
+    for (SPTGaiaDevice *device in [gaia devices]) {
         if ([device.name isEqualToString:deviceName]) {
             [gaia activateDevice:device withCallback:nil];
             HBLogDebug(@"Sending device %@ to Gaia", device);
@@ -77,6 +88,51 @@ void doChangeConnectDevice(CFNotificationCenterRef center,
      // No matching names
      HBLogDebug(@"Found no matching device names, disconnecting");
      [gaia activateDevice:nil withCallback:nil];
+}
+
+// Add to playlist
+void addCurrentTrack(CFNotificationCenterRef center,
+                           void *observer,
+                           CFStringRef name,
+                           const void *object,
+                           CFDictionaryRef userInfo) {
+    // Update chosen playlist
+    preferences = [[NSMutableDictionary alloc] initWithContentsOfFile:prefPath];
+    NSString *chosenPlaylist = [preferences objectForKey:chosenPlaylistKey];
+
+    for (SPPlaylist *playlist in playlistContainer.actualPlaylists) {
+        if ([playlist.name isEqualToString:chosenPlaylist]) {
+            SPPlayerTrack *track = ((SPPlayerTrack *)[statefulPlayer currentTrack]);
+            if (track != nil) { // Maybe this check belongs in the Activator listener (button that says "Play some music")?
+                HBLogDebug(@"Trying to add track '%@' to playlist '%@'", track.URI, playlist.name);
+                NSArray *tracks = [[NSArray alloc] initWithObjects:track.URI, nil];
+                [playlist addTrackURLs:tracks];
+                [tracks release];
+            }
+            return;
+        }
+    }
+}
+
+// Update playlists
+void updatePlaylists(CFNotificationCenterRef center,
+                     void *observer,
+                     CFStringRef name,
+                     const void *object,
+                     CFDictionaryRef userInfo) {
+    NSMutableArray *playlistNames = [[NSMutableArray alloc] init];
+    for (SPPlaylist *playlist in playlistContainer.actualPlaylists) {
+        if (playlist.isWriteable && ![playlist.name isEqualToString:@""]) {
+            [playlistNames addObject:playlist.name];
+        }
+    }
+    
+    // Save names to plist in order to share with SpringBoard
+    [preferences setObject:playlistNames forKey:playlistsKey];
+    
+    if (![preferences writeToFile:prefPath atomically:YES]) {
+        HBLogError(@"Could not save preferences!");
+    }
 }
 
 
@@ -104,6 +160,11 @@ void doChangeConnectDevice(CFNotificationCenterRef center,
     
     // Connect:
     CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, &doChangeConnectDevice, CFStringRef(doChangeConnectDeviceNotification), NULL, 0);
+        
+    // Add to playlist:
+    CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, &addCurrentTrack, CFStringRef(addCurrentTrackNotification), NULL, 0);
+        
+    CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, &updatePlaylists, CFStringRef(updatePlaylistsNotification), NULL, 0);
     
 
     // Save core
@@ -136,14 +197,47 @@ void doChangeConnectDevice(CFNotificationCenterRef center,
     
     // Set activeDevice to null
     [preferences setObject:@"" forKey:activeDeviceKey];
-    
+
     // Override Spotify values to current flipswitch values
     [playbackController setRepeatMode:[[preferences objectForKey:repeatKey] intValue]];
     [playbackController setGlobalShuffleMode:[[preferences objectForKey:shuffleKey] boolValue]];
-    
+    [core setForcedOffline:[[preferences objectForKey:offlineKey] boolValue]];
+
     // Save changes
     if (![preferences writeToFile:prefPath atomically:YES]) {
         HBLogError(@"Could not save preferences!");
+    }
+}
+
+%end
+
+
+BOOL didRetrievePlaylists = NO;
+
+// A little more later in app launch
+%hook SPTTabBarController
+
+- (void)viewDidAppear:(BOOL)arg {
+    %orig;
+
+    if (!didRetrievePlaylists) { // Only retrieve playlists once
+        didRetrievePlaylists = YES;
+        
+        // Retrieve playlists
+        playlistContainer = [callbacksHolder playlists];
+//        NSMutableArray *playlistNames = [[NSMutableArray alloc] init];
+//        for (SPPlaylist *playlist in playlistContainer.actualPlaylists) {
+//            if (playlist.isWriteable && ![playlist.name isEqualToString:@""]) {
+//                [playlistNames addObject:playlist.name];
+//            }
+//        }
+//        
+//        // Save names to plist in order to share with SpringBoard
+//        [preferences setObject:playlistNames forKey:playlistsKey];
+//        
+//        if (![preferences writeToFile:prefPath atomically:YES]) {
+//            HBLogError(@"Could not save preferences!");
+//        }
     }
 }
 
@@ -187,9 +281,6 @@ void doChangeConnectDevice(CFNotificationCenterRef center,
         if ([className isEqualToString:@"OfflineSettingsSection"]) {
             offlineViewController = self;
             isCurrentViewOfflineView = YES;
-            
-            // Do testing here
-            //HBLogDebug(@"Playlists: %@", [playlistContainer actualPlaylists]);
         }
     }
 }
@@ -265,7 +356,6 @@ void doChangeConnectDevice(CFNotificationCenterRef center,
 // Save Spotify Connect devices
 - (void)rebuildDeviceList {
     %orig;
-    HBLogDebug(@"Building device list...")
     if ([[self devices] count] > 0) {
         deviceNames = [[NSMutableArray alloc] init];
         for (SPTGaiaDevice *device in self.devices) {
@@ -289,7 +379,6 @@ void doChangeConnectDevice(CFNotificationCenterRef center,
 // Method that changes Connect device
 - (void)activateDevice:(SPTGaiaDevice *)device withCallback:(id)arg {
     %orig;
-    HBLogDebug(@"Device was changed");
     if (device != nil) {
         [preferences setObject:device.name forKey:activeDeviceKey];
     } else {
@@ -297,6 +386,68 @@ void doChangeConnectDevice(CFNotificationCenterRef center,
     }
 
     // Save to .plist
+    if (![preferences writeToFile:prefPath atomically:YES]) {
+        HBLogError(@"Could not save preferences!");
+    }
+}
+
+%end
+
+
+
+
+// Testing
+
+BOOL didRetrieveCallbacksHolder = NO;
+
+%hook SPPlaylistContainerCallbacksHolder
+
+- (id)initWithObjc:(id)arg {
+    if (!didRetrieveCallbacksHolder) {
+        didRetrieveCallbacksHolder = YES;
+        HBLogDebug(@"Made a new ContainerCallbacksHolder!");
+        return callbacksHolder = %orig;
+    }
+    
+    return %orig;
+}
+
+%end
+
+
+//// Class used to save to library
+//%hook SPTNowPlayingAuxiliaryActionsModel
+//
+//- (id)initWithCollectionPlatform:(id)arg1 adsManager:(id)arg2 trackMetadataQueue:(id)arg3 showsFollowService:(id)arg4 {
+//    HBLogDebug(@"Found auxActionModel!");
+//
+//    return auxActionModel = %orig;
+//}
+//
+//%end
+
+
+// Class that stores current track
+%hook SPTStatefulPlayer
+
+- (id)initWithPlayer:(id)arg {
+    return statefulPlayer = %orig;
+}
+
+%end
+
+
+// Save updated track
+%hook SPTNowPlayingBarModel
+
+- (void)setCurrentTrackURL:(SPPlayerTrack *)track {
+    %orig;
+    
+    BOOL null;
+    !track ? null = YES : null = NO;
+    [preferences setObject:[NSNumber numberWithBool:null] forKey:isCurrentTrackNullKey];
+    
+    // Save current track
     if (![preferences writeToFile:prefPath atomically:YES]) {
         HBLogError(@"Could not save preferences!");
     }

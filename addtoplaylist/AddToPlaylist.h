@@ -1,6 +1,6 @@
+#import <libactivator/libactivator.h>
 #import <SpringBoard/SBApplication.h>
 #import <SpringBoard/SBApplicationController.h>
-#import <libactivator/libactivator.h>
 #import <UIKit/UIApplication2.h>
 #import "../include/Header.h"
 
@@ -8,7 +8,7 @@
 - (void)_setSecure:(BOOL)arg1;
 @end
 
-@interface Connectify : NSObject <LAListener, UIActionSheetDelegate>
+@interface AddToPlaylist : NSObject <LAListener, UIActionSheetDelegate>
 
 - (void)activator:(LAActivator *)activator receiveEvent:(LAEvent *)event;
 - (void)activator:(LAActivator *)activator abortEvent:(LAEvent *)event;

@@ -19,8 +19,14 @@ NSString *const doDisableRepeatNotification = @"se.nosskirneh.spotifyswitches/do
 // Connect
 NSString *const doChangeConnectDeviceNotification = @"se.nosskirneh.spotifyswitches/doChangeConnectDevice";
 
-// Connectify settings
+// Add to playlist
+NSString *const addCurrentTrackNotification = @"se.nosskirneh.spotifyswitches/addCurrentTrack";
+NSString *const updatePlaylistsNotification = @"se.nosskirneh.spotifyswitches/updatePlaylists";
+
+
+// Connectify and AddToPlaylist arrays
 NSMutableArray<NSString *> *deviceNames;
+NSMutableArray<NSString *> *playlistNames;
 
 // Lookup keys
 NSString *const offlineKey = @"OfflineMode";
@@ -28,6 +34,9 @@ NSString *const shuffleKey = @"Shuffle";
 NSString *const repeatKey  = @"Repeat";
 NSString *const devicesKey = @"ConnectDevices";
 NSString *const activeDeviceKey = @"ActiveConnectDevice";
+NSString *const playlistsKey = @"PlaylistNames";
+NSString *const chosenPlaylistKey = @"ChosenPlaylist";
+NSString *const isCurrentTrackNullKey = @"isCurrentTrackNull";
 
 // Other
 NSString *const spotifyBundleIdentifier = @"com.spotify.client";
@@ -41,6 +50,7 @@ NSString *const spotifyBundleIdentifier = @"com.spotify.client";
 @interface SPTNowPlayingPlaybackController : NSObject
 - (void)setGlobalShuffleMode:(BOOL)arg;
 - (void)setRepeatMode:(NSUInteger)value;
+- (void)setPaused:(BOOL)arg;
 @end
 
 
@@ -68,6 +78,47 @@ NSString *const spotifyBundleIdentifier = @"com.spotify.client";
 - (id)activeDevice;
 - (void)activateDevice:(id)device withCallback:(id)callback;
 @end
+
+
+//Testing
+
+@interface SPPlayerTrack : NSObject
+@property (nonatomic, assign, readwrite) NSURL *URI;
+@property (nonatomic, assign, readwrite) NSString *showTitle;
+@end
+
+@interface SPPlaylist : NSObject
+- (void)addTrackURLs:(id)arg;
+@property (nonatomic, assign, readwrite) NSURL *URL;
+@property (nonatomic, assign, readwrite) NSString *name;
+@property (nonatomic, assign, readwrite) BOOL isWriteable;
+@end
+
+
+@interface SPPlaylistContainer : NSObject
+@property (nonatomic, assign, readwrite) NSArray *actualPlaylists;
+- (void)insertObject:(id)track inPlaylistsAtIndex:(NSUInteger)index;
+@end
+
+
+@interface SPPlaylistContainerCallbacksHolder : NSObject
+- (id)playlists;
+@end
+
+@interface SPTNowPlayingAuxiliaryActionsModel : NSObject
+- (BOOL)isInCollection;
+- (void)addToCollection;
+- (void)removeFromCollection;
+@end
+
+@interface SPTStatefulPlayer : NSObject
+- (id)currentTrack;
+@end
+
+@interface SPTNowPlayingBarModel : NSObject
+- (void)setCurrentTrackURL:(SPPlayerTrack *)track;
+@end
+
 
 
 #endif
