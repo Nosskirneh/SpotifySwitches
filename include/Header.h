@@ -21,12 +21,12 @@ NSString *const doChangeConnectDeviceNotification = @"se.nosskirneh.spotifyswitc
 
 // Add to playlist
 NSString *const addCurrentTrackNotification = @"se.nosskirneh.spotifyswitches/addCurrentTrack";
-NSString *const updatePlaylistsNotification = @"se.nosskirneh.spotifyswitches/updatePlaylists";
 
 
 // Connectify and AddToPlaylist arrays
 NSMutableArray<NSString *> *deviceNames;
-NSMutableArray<NSString *> *playlistNames;
+NSMutableArray *playlists;
+NSMutableDictionary *playlist;
 
 // Lookup keys
 NSString *const offlineKey = @"OfflineMode";
@@ -34,7 +34,7 @@ NSString *const shuffleKey = @"Shuffle";
 NSString *const repeatKey  = @"Repeat";
 NSString *const devicesKey = @"ConnectDevices";
 NSString *const activeDeviceKey = @"ActiveConnectDevice";
-NSString *const playlistsKey = @"PlaylistNames";
+NSString *const playlistsKey = @"Playlists";
 NSString *const chosenPlaylistKey = @"ChosenPlaylist";
 NSString *const isCurrentTrackNullKey = @"isCurrentTrackNull";
 
@@ -97,26 +97,24 @@ NSString *const spotifyBundleIdentifier = @"com.spotify.client";
 
 @interface SPPlaylistContainer : NSObject
 @property (nonatomic, assign, readwrite) NSArray *actualPlaylists;
-- (void)insertObject:(id)track inPlaylistsAtIndex:(NSUInteger)index;
 @end
 
 
 @interface SPPlaylistContainerCallbacksHolder : NSObject
 - (id)playlists;
+- (void)retrievePlaylists;
 @end
 
-@interface SPTNowPlayingAuxiliaryActionsModel : NSObject
-- (BOOL)isInCollection;
-- (void)addToCollection;
-- (void)removeFromCollection;
-@end
+
+//@interface SPTNowPlayingAuxiliaryActionsModel : NSObject
+//- (BOOL)isInCollection;
+//- (void)addToCollection;
+//- (void)removeFromCollection;
+//@end
+
 
 @interface SPTStatefulPlayer : NSObject
 - (id)currentTrack;
-@end
-
-@interface SPTNowPlayingBarModel : NSObject
-- (void)setCurrentTrackURL:(SPPlayerTrack *)track;
 @end
 
 

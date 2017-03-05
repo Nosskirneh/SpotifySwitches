@@ -61,19 +61,16 @@ NSString *chosenPlaylist;
     playlistSheet = [[UIActionSheet alloc] initWithTitle:@"Current track\nAdd to which playlist?" delegate:self cancelButtonTitle:nil destructiveButtonTitle:nil otherButtonTitles:nil];
 
     if (pid >= 0) { // Spotify is running
-        // Send notification to update playlists
-        CFNotificationCenterPostNotification(CFNotificationCenterGetDarwinNotifyCenter(), (CFStringRef)updatePlaylistsNotification, NULL, NULL, YES);
-        
         // Update preferences
         preferences = [[NSMutableDictionary alloc] initWithContentsOfFile:prefPath];
 
         if ([[preferences objectForKey:isCurrentTrackNullKey] boolValue]) {
             playlistSheet.destructiveButtonIndex = [playlistSheet addButtonWithTitle:@"Play some music"];
         } else {
-            playlistNames = [preferences objectForKey:playlistsKey];
+            playlists = [preferences objectForKey:playlistsKey];
             
-            for (int i = 0; i < playlistNames.count; i++) {
-                [playlistSheet addButtonWithTitle:playlistNames[i]];
+            for (int i = 0; i < playlists.count; i++) {
+                [playlistSheet addButtonWithTitle:[playlists[i] objectForKey:@"name"]];
             }
         }
 
@@ -103,7 +100,8 @@ NSString *chosenPlaylist;
         HBLogDebug(@"Trying to launch Spotify");
         [[%c(UIApplication) sharedApplication] launchApplicationWithIdentifier:spotifyBundleIdentifier suspended:NO];
     } else {
-        NSString *selectedPlaylistName = playlistNames[[playlistNames indexOfObject:buttonTitle]];
+        //NSString *selectedPlaylistName = playlistNames[[playlistNames indexOfObject:buttonTitle]];
+        NSString *selectedPlaylistName = [playlists[buttonIndex] objectForKey:@"name"];;
         
         HBLogDebug(@"Trying to add current track to: %@", selectedPlaylistName);
         [preferences setObject:selectedPlaylistName forKey:chosenPlaylistKey];
@@ -124,7 +122,7 @@ NSString *chosenPlaylist;
 - (void)dealloc {
     [[NSNotificationCenter defaultCenter] removeObserver:self];
     
-    [playlistNames release];
+    [playlists release];
     [playlistSheet release];
     
     [super dealloc];

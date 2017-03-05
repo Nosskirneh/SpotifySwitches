@@ -103,35 +103,11 @@ void addCurrentTrack(CFNotificationCenterRef center,
     for (SPPlaylist *playlist in playlistContainer.actualPlaylists) {
         if ([playlist.name isEqualToString:chosenPlaylist]) {
             SPPlayerTrack *track = ((SPPlayerTrack *)[statefulPlayer currentTrack]);
-            if (track != nil) { // Maybe this check belongs in the Activator listener (button that says "Play some music")?
                 HBLogDebug(@"Trying to add track '%@' to playlist '%@'", track.URI, playlist.name);
                 NSArray *tracks = [[NSArray alloc] initWithObjects:track.URI, nil];
                 [playlist addTrackURLs:tracks];
                 [tracks release];
-            }
-            return;
         }
-    }
-}
-
-// Update playlists
-void updatePlaylists(CFNotificationCenterRef center,
-                     void *observer,
-                     CFStringRef name,
-                     const void *object,
-                     CFDictionaryRef userInfo) {
-    NSMutableArray *playlistNames = [[NSMutableArray alloc] init];
-    for (SPPlaylist *playlist in playlistContainer.actualPlaylists) {
-        if (playlist.isWriteable && ![playlist.name isEqualToString:@""]) {
-            [playlistNames addObject:playlist.name];
-        }
-    }
-    
-    // Save names to plist in order to share with SpringBoard
-    [preferences setObject:playlistNames forKey:playlistsKey];
-    
-    if (![preferences writeToFile:prefPath atomically:YES]) {
-        HBLogError(@"Could not save preferences!");
     }
 }
 
@@ -163,8 +139,6 @@ void updatePlaylists(CFNotificationCenterRef center,
         
     // Add to playlist:
     CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, &addCurrentTrack, CFStringRef(addCurrentTrackNotification), NULL, 0);
-        
-    CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, &updatePlaylists, CFStringRef(updatePlaylistsNotification), NULL, 0);
     
 
     // Save core
@@ -224,20 +198,9 @@ BOOL didRetrievePlaylists = NO;
         didRetrievePlaylists = YES;
         
         // Retrieve playlists
-        playlistContainer = [callbacksHolder playlists];
-//        NSMutableArray *playlistNames = [[NSMutableArray alloc] init];
-//        for (SPPlaylist *playlist in playlistContainer.actualPlaylists) {
-//            if (playlist.isWriteable && ![playlist.name isEqualToString:@""]) {
-//                [playlistNames addObject:playlist.name];
-//            }
-//        }
-//        
-//        // Save names to plist in order to share with SpringBoard
-//        [preferences setObject:playlistNames forKey:playlistsKey];
-//        
-//        if (![preferences writeToFile:prefPath atomically:YES]) {
-//            HBLogError(@"Could not save preferences!");
-//        }
+        [callbacksHolder retrievePlaylists];
+        
+        HBLogDebug(@"playlists: %@", playlists);
     }
 }
 
@@ -397,7 +360,6 @@ BOOL didRetrievePlaylists = NO;
 
 
 // Testing
-
 BOOL didRetrieveCallbacksHolder = NO;
 
 %hook SPPlaylistContainerCallbacksHolder
@@ -412,10 +374,96 @@ BOOL didRetrieveCallbacksHolder = NO;
     return %orig;
 }
 
+%new
+- (void)retrievePlaylists {
+    HBLogDebug(@"Updating playlists...");
+    playlistContainer = [self playlists];
+    HBLogDebug(@"playlistContainer: %@", playlistContainer);
+    playlists = [[NSMutableArray alloc] init];
+
+    for (SPPlaylist *list in playlistContainer.actualPlaylists) {
+        if (list.isWriteable && ![list.name isEqualToString:@""]) {
+            playlist = [[NSMutableDictionary alloc] init];
+            [playlist setObject:[list.URL absoluteString] forKey:@"URL"];
+            [playlist setObject:list.name forKey:@"name"];
+            [playlists addObject:playlist];
+        }
+    }
+    
+    // Save playlists to plist in order to share with SpringBoard
+    [preferences setObject:playlists forKey:playlistsKey];
+    [playlists release];
+    [playlist release];
+    
+    if (![preferences writeToFile:prefPath atomically:YES]) {
+        HBLogError(@"Could not save preferences!");
+    }
+}
+
 %end
 
 
-//// Class used to save to library
+%hook SPTPlaylistCosmosModel
+
+// Fortunately the URL is given, so we can match it against the smaller array
+// and remove the matching playlist.
+- (void)removePlaylistOrFolderURL:(id)url inFolderURL:(id)arg2 completion:(id)arg3 {
+    %orig;
+    HBLogDebug(@"Trying to remove playlist with url: %@", url);
+    
+    playlists = [preferences objectForKey:playlistsKey];
+    for (int i = 0; i < playlists.count; i++) {
+        NSMutableDictionary *playlist = [playlists objectAtIndex:i];
+        HBLogDebug(@"URL: %@", [playlist objectForKey:@"URL"])
+        if ([[playlist objectForKey:@"URL"] isEqualToString:[url absoluteString]]) {
+            [playlists removeObjectAtIndex:i];
+            HBLogDebug(@"Removed a playlist!");
+            HBLogDebug(@"playlists: %@", [preferences objectForKey:playlistsKey]);
+        }
+    }
+}
+
+// this method is never called, which is problametic because if user change
+// name on one playlist, the Activator listener wouldn't know :/
+- (void)renamePlaylistURL:(id)arg1 name:(id)arg2 completion:(id)arg3 {
+    %orig;
+    HBLogDebug(@"rename playlist: %@ to %@", arg1, arg2);
+}
+
+//- (void)createPlaylistWithName:(id)arg1 inFolderURL:(id)arg2 completion:(id)arg3 {
+//    %orig;
+//    HBLogDebug(@"createPlaylist 2");
+//}
+
+%end
+
+%hook SPTRecentlyPlayedEntityList
+
+- (void)recentlyPlayedModelDidReload:(id)arg {
+    %orig;
+    HBLogDebug(@"recentlyPlayedModelDidReload!");
+    // Update playlists
+    [callbacksHolder retrievePlaylists];
+    
+    HBLogDebug(@"playlists: %@", [preferences objectForKey:playlistsKey]);
+}
+
+%end
+
+
+%hook SPTPlaylistCosmosViewModel
+
+- (void)renamePlatlist:(id)arg1 onCompletion:(id)arg2 {
+    %orig;
+    HBLogDebug(@"Renamed a playlist!");
+}
+
+%end
+
+
+
+
+//// Class used to save track to library
 //%hook SPTNowPlayingAuxiliaryActionsModel
 //
 //- (id)initWithCollectionPlatform:(id)arg1 adsManager:(id)arg2 trackMetadataQueue:(id)arg3 showsFollowService:(id)arg4 {
@@ -443,11 +491,7 @@ BOOL didRetrieveCallbacksHolder = NO;
 - (void)setCurrentTrackURL:(SPPlayerTrack *)track {
     %orig;
     
-    BOOL null;
-    !track ? null = YES : null = NO;
-    [preferences setObject:[NSNumber numberWithBool:null] forKey:isCurrentTrackNullKey];
-    
-    // Save current track
+    [preferences setObject:[NSNumber numberWithBool:!track] forKey:isCurrentTrackNullKey];
     if (![preferences writeToFile:prefPath atomically:YES]) {
         HBLogError(@"Could not save preferences!");
     }
