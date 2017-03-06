@@ -3,8 +3,9 @@
 #import <SpringBoard/SBApplicationController.h>
 #import <UIKit/UIApplication2.h>
 #import "../include/Header.h"
+#import "../include/UIAlertController.h"
 
-@interface AddToCollection : NSObject <LAListener, UIActionSheetDelegate>
+@interface AddToCollection : NSObject <LAListener>
 
 - (void)activator:(LAActivator *)activator receiveEvent:(LAEvent *)event;
 + (void)load;

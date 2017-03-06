@@ -2,9 +2,6 @@
 
 @implementation AddToPlaylist
 
-UIActionSheet *playlistSheet;
-NSString *chosenPlaylist;
-
 + (void)load {
     NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
     if ([[[NSBundle mainBundle] bundleIdentifier] isEqualToString:@"com.apple.springboard"])
@@ -15,10 +12,6 @@ NSString *chosenPlaylist;
 - (id)init {
     self = [super init];
 
-    if (self) {
-        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(addToPlaylistStartNotificationReceived:) name:@"addtoplaylist.start" object:nil];
-    }
-
     // Init settings file
     preferences = [[NSMutableDictionary alloc] initWithContentsOfFile:prefPath];
     if (!preferences) preferences = [[NSMutableDictionary alloc] init];
@@ -26,106 +19,80 @@ NSString *chosenPlaylist;
     return self;
 }
 
-// Called when the user-defined action is recognized, shows selection sheet
+// Called when the user-defined action is recognized, shows selection alert
 - (void)activator:(LAActivator *)activator receiveEvent:(LAEvent *)event {
     [event setHandled:YES];
-    [self addToPlaylistStartNotificationReceived:nil];
-}
-
-- (void)activator:(LAActivator *)activator abortEvent:(LAEvent *)event {
-    [self dismiss];
-}
-
-- (void)activator:(LAActivator *)activator otherListenerDidHandleEvent:(LAEvent *)event {
-    [self dismiss];
-}
-
-- (void)activator:(LAActivator *)activator receiveDeactivateEvent:(LAEvent *)event {
-    [self dismiss];
-}
-
-// Restricts action to only be paired with other non-modal-ui actions
-- (NSArray *)activator:(LAActivator *)activator requiresExclusiveAssignmentGroupsForListenerName:(NSString *)listenerName {
-    return @[@"modal-ui"];
-}
-
-- (void)addToPlaylistStartNotificationReceived:(NSNotification *)notification {
-    if (playlistSheet) {
-        HBLogDebug(@"Already presenting an action sheet, so we'll ignore this subsequent call");
-        return;
-    }
-
-    SBApplication* app = [[%c(SBApplicationController) sharedInstance] applicationWithBundleIdentifier:spotifyBundleIdentifier];
-    int pid = [app pid];
+    UIAlertController *playlistAlert = [UIAlertController
+                                        alertControllerWithTitle:@"Add to Playlist"
+                                        message:@"Add current track to which playlist?"
+                                        preferredStyle:UIAlertControllerStyleActionSheet
+                                        ];
     
-    playlistSheet = [[UIActionSheet alloc] initWithTitle:@"Current track\nAdd to which playlist?" delegate:self cancelButtonTitle:nil destructiveButtonTitle:nil otherButtonTitles:nil];
-
-    if (pid >= 0) { // Spotify is running
+    SBApplication* app = [[%c(SBApplicationController) sharedInstance] applicationWithBundleIdentifier:spotifyBundleIdentifier];
+    
+    if ([app pid] >= 0) { // Spotify is running
         // Update preferences
         preferences = [[NSMutableDictionary alloc] initWithContentsOfFile:prefPath];
-
+        
         if ([[preferences objectForKey:isCurrentTrackNullKey] boolValue]) {
-            playlistSheet.destructiveButtonIndex = [playlistSheet addButtonWithTitle:@"Play some music"];
+            // Not listening to music
+            UIAlertAction *launchAppAction = [self createLaunchAppAction:@"Play some music"];
+            [playlistAlert addAction:launchAppAction];
         } else {
             playlists = [preferences objectForKey:playlistsKey];
             
+            UIAlertAction *playlistAction;
             for (int i = 0; i < playlists.count; i++) {
-                [playlistSheet addButtonWithTitle:[playlists[i] objectForKey:@"name"]];
+                playlistAction = [UIAlertAction
+                                  actionWithTitle:[playlists[i] objectForKey:@"name"]
+                                  style:UIAlertActionStyleDefault
+                                  handler:^(UIAlertAction *action) {
+                                      [self clickedPlaylistAtIndex:i];
+                                  }];
+                [playlistAlert addAction:playlistAction];
+                HBLogDebug(@"Added a playlist action!");
             }
         }
-
-    } else {
-        playlistSheet.destructiveButtonIndex = [playlistSheet addButtonWithTitle:@"Launch Spotify"];
-    }
-
-    playlistSheet.cancelButtonIndex = [playlistSheet addButtonWithTitle:@"Cancel"];
-    
-    [playlistSheet showInView:[UIApplication sharedApplication].keyWindow];
-}
-
-- (void)dismiss {
-    if (playlistSheet) {
-        [playlistSheet dismissWithClickedButtonIndex:playlistSheet.cancelButtonIndex animated:YES];
-    } else {
-        HBLogDebug(@"Cannot dismiss non-existent action sheet");
-    }
-}
-
-- (void)actionSheet:(UIActionSheet *)actionSheet clickedButtonAtIndex:(NSInteger)buttonIndex {
-    NSString *buttonTitle = [actionSheet buttonTitleAtIndex:buttonIndex];
-    
-    if (buttonIndex < 0 || [buttonTitle isEqualToString:@"Cancel"]) { // Cancel
-        HBLogDebug(@"Dismissing action sheet after cancel button press");
-    } else if ([buttonTitle isEqualToString:@"Launch Spotify"] || [buttonTitle isEqualToString:@"Play some music"]) { // Launch Spotify
-        HBLogDebug(@"Trying to launch Spotify");
-        [[%c(UIApplication) sharedApplication] launchApplicationWithIdentifier:spotifyBundleIdentifier suspended:NO];
-    } else {
-        //NSString *selectedPlaylistName = playlistNames[[playlistNames indexOfObject:buttonTitle]];
-        NSString *selectedPlaylistName = [playlists[buttonIndex] objectForKey:@"name"];
         
-        HBLogDebug(@"Trying to add current track to: %@", selectedPlaylistName);
-        [preferences setObject:selectedPlaylistName forKey:chosenPlaylistKey];
-        
-        // Save to .plist
-        if (![preferences writeToFile:prefPath atomically:YES]) {
-            HBLogError(@"Could not save preferences!");
-        }
-        // Send notification that a playlist was choosen
-        CFNotificationCenterPostNotification(CFNotificationCenterGetDarwinNotifyCenter(), (CFStringRef)addCurrentTrackToPlaylistNotification, NULL, NULL, YES);
+    } else {
+        UIAlertAction *launchAppAction = [self createLaunchAppAction:@"Launch Spotify"];
+        [playlistAlert addAction:launchAppAction];
     }
+    
+    UIAlertAction* cancel = [UIAlertAction
+                             actionWithTitle:@"Cancel"
+                             style:UIAlertActionStyleCancel
+                             handler:^(UIAlertAction * action)
+                             {
+                                 [playlistAlert dismissViewControllerAnimated:YES completion:nil];
+                                 
+                             }];
+    
+    [playlistAlert addAction:cancel];
+    [playlistAlert show];
 }
 
-- (void)actionSheet:(UIActionSheet *)actionSheet didDismissWithButtonIndex:(NSInteger)buttonIndex {
-    playlistSheet = nil;
+- (UIAlertAction *)createLaunchAppAction:(NSString *)title {
+    return [UIAlertAction
+            actionWithTitle:title
+            style:UIAlertActionStyleDestructive
+            handler:^(UIAlertAction *action) {
+                [[%c(UIApplication) sharedApplication] launchApplicationWithIdentifier:spotifyBundleIdentifier suspended:NO];
+            }];
 }
 
-- (void)dealloc {
-    [[NSNotificationCenter defaultCenter] removeObserver:self];
-    
-    [playlists release];
-    [playlistSheet release];
-    
-    [super dealloc];
+- (void)clickedPlaylistAtIndex:(NSInteger)index {
+    NSString *selectedPlaylistName = [playlists[index] objectForKey:@"name"];
+
+    HBLogDebug(@"Trying to add current track to: %@", selectedPlaylistName);
+    [preferences setObject:selectedPlaylistName forKey:chosenPlaylistKey];
+
+    // Save to .plist
+    if (![preferences writeToFile:prefPath atomically:YES]) {
+        HBLogError(@"Could not save preferences!");
+    }
+    // Send notification that a playlist was choosen
+    CFNotificationCenterPostNotification(CFNotificationCenterGetDarwinNotifyCenter(), (CFStringRef)addCurrentTrackToPlaylistNotification, NULL, NULL, YES);
 }
 
 @end
