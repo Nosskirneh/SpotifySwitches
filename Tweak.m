@@ -17,6 +17,9 @@ SPPlaylistContainer *playlistContainer;
 SPPlaylistContainerCallbacksHolder *callbacksHolder;
 SPTNowPlayingAuxiliaryActionsModel *auxActionModel;
 
+// Incognito Mode
+SPSession *session;
+
 // Method that updates changes to .plist
 void updateSettings() {
     if (![preferences writeToFile:prefPath atomically:YES]) {
@@ -129,6 +132,16 @@ void toggleCurrentTrackInCollection(CFNotificationCenterRef center,
     inCollection ? [auxActionModel removeFromCollection] : [auxActionModel addToCollection];
 }
 
+// Incognito Mode
+void toggleIncognitoMode(CFNotificationCenterRef center,
+                                    void *observer,
+                                    CFStringRef name,
+                                    const void *object,
+                                    CFDictionaryRef userInfo) {
+    BOOL enabled = [session isIncognitoModeEnabled];
+    enabled ? [session disableIncognitoMode] : [session enableIncognitoMode];
+}
+
 
 
 // Class that forces Offline Mode
@@ -160,7 +173,10 @@ void toggleCurrentTrackInCollection(CFNotificationCenterRef center,
         
     // Add to collection:
     CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, &toggleCurrentTrackInCollection, CFStringRef(toggleCurrentTrackInCollectionNotification), NULL, 0);
-    
+
+    // Shuffle:
+    CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, &toggleIncognitoMode, CFStringRef(toggleIncognitoModeNotification), NULL, 0);
+
 
     // Save core
     return core = %orig;
@@ -467,6 +483,31 @@ BOOL didRetrieveCallbacksHolder = NO;
     %orig;
     // Update preferences
     [preferences setObject:[NSNumber numberWithBool:arg] forKey:isCurrentTrackInCollectionKey];
+    updateSettings();
+}
+
+%end
+
+
+// Incognito Mode
+
+%hook SPSession
+
+- (id)initWithCore:(id)arg1 coreCreateOptions:(id)arg2 session:(id)arg3 clientVersionString:(id)arg4 acceptLanguages:(id)arg5 {
+    return session = %orig;
+}
+
+- (void)enableIncognitoMode {
+    %orig;
+    
+    [preferences setObject:[NSNumber numberWithBool:YES] forKey:incognitoKey];
+    updateSettings();
+}
+
+- (void)disableIncognitoMode {
+    %orig;
+    
+    [preferences setObject:[NSNumber numberWithBool:NO] forKey:incognitoKey];
     updateSettings();
 }
 

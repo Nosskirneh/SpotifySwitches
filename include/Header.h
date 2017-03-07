@@ -25,6 +25,9 @@ NSString *const addCurrentTrackToPlaylistNotification = @"se.nosskirneh.spotifys
 // Add to collection
 NSString *const toggleCurrentTrackInCollectionNotification = @"se.nosskirneh.spotifyswitches/toggleCurrentTrackInCollection";
 
+// Incognito Mode
+NSString *const toggleIncognitoModeNotification = @"se.nosskirneh.spotifyswitches/toggleIncognitoMode";
+
 
 
 // Connectify and AddToPlaylist arrays
@@ -42,6 +45,7 @@ NSString *const playlistsKey = @"Playlists";
 NSString *const chosenPlaylistKey = @"ChosenPlaylist";
 NSString *const isCurrentTrackNullKey = @"isCurrentTrackNull";
 NSString *const isCurrentTrackInCollectionKey = @"isCurrentTrackInCollection";
+NSString *const incognitoKey = @"IncognitoMode";
 
 // Other
 NSString *const spotifyBundleIdentifier = @"com.spotify.client";
@@ -123,5 +127,10 @@ NSString *const spotifyBundleIdentifier = @"com.spotify.client";
 @end
 
 
+@interface SPSession : NSObject
+- (void)enableIncognitoMode;
+- (void)disableIncognitoMode;
+- (BOOL)isIncognitoModeEnabled;
+@end
 
 #endif
