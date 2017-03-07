@@ -31,6 +31,8 @@
 // Called when the user-defined action is recognized
 - (void)activator:(LAActivator *)activator receiveEvent:(LAEvent *)event {
     [event setHandled:YES];
+    // Update preferences
+    preferences = [[NSMutableDictionary alloc] initWithContentsOfFile:prefPath];
     
     UIAlertController *alert = [UIAlertController
                                         alertControllerWithTitle:@"Ohoh"
@@ -41,18 +43,32 @@
     SBApplication* app = [[%c(SBApplicationController) sharedInstance] applicationWithBundleIdentifier:spotifyBundleIdentifier];
     
     if ([app pid] >= 0) { // Spotify is running
-
         if ([[preferences objectForKey:isCurrentTrackNullKey] boolValue]) {
             // Not listening to music
             UIAlertAction *launchAppAction = [self createLaunchAppAction:@"Play some music"];
             [alert addAction:launchAppAction];
         } else {
-            // Add song;
+            if ([[preferences objectForKey:isCurrentTrackInCollectionKey] boolValue]) {
+                // Present UIAlertController that says "already in collection - add anyway?"
+                alert.message = @"Track already in collection! Do you want to keep it there or remove it?";
+                UIAlertAction* remove = [UIAlertAction
+                                         actionWithTitle:@"Remove"
+                                         style:UIAlertActionStyleDestructive
+                                         handler:^(UIAlertAction * action)
+                                         {
+                                             // Change the message of the alert here
+                                             CFNotificationCenterPostNotification(CFNotificationCenterGetDarwinNotifyCenter(), (CFStringRef)toggleCurrentTrackInCollectionNotification, NULL, NULL, YES);
+                                             
+                                         }];
+                [alert addAction:remove];
+            }
         }
     } else  {
         UIAlertAction *launchAppAction = [self createLaunchAppAction:@"Launch Spotify"];
         [alert addAction:launchAppAction];
     }
+
+
     
     if (alert.actions.count != 0) {
         UIAlertAction* cancel = [UIAlertAction
@@ -68,7 +84,7 @@
         [alert show];
     } else {
         // Send notification
-        CFNotificationCenterPostNotification(CFNotificationCenterGetDarwinNotifyCenter(), (CFStringRef)addCurrentTrackToCollectionNotification, NULL, NULL, YES);
+        CFNotificationCenterPostNotification(CFNotificationCenterGetDarwinNotifyCenter(), (CFStringRef)toggleCurrentTrackInCollectionNotification, NULL, NULL, YES);
     }
 }
 

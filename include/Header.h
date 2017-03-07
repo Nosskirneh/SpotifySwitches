@@ -23,7 +23,7 @@ NSString *const doChangeConnectDeviceNotification = @"se.nosskirneh.spotifyswitc
 NSString *const addCurrentTrackToPlaylistNotification = @"se.nosskirneh.spotifyswitches/addCurrentTrackToPlaylist";
 
 // Add to collection
-NSString *const addCurrentTrackToCollectionNotification = @"se.nosskirneh.spotifyswitches/addCurrentTrackToCollection";
+NSString *const toggleCurrentTrackInCollectionNotification = @"se.nosskirneh.spotifyswitches/toggleCurrentTrackInCollection";
 
 
 
@@ -41,6 +41,7 @@ NSString *const activeDeviceKey = @"ActiveConnectDevice";
 NSString *const playlistsKey = @"Playlists";
 NSString *const chosenPlaylistKey = @"ChosenPlaylist";
 NSString *const isCurrentTrackNullKey = @"isCurrentTrackNull";
+NSString *const isCurrentTrackInCollectionKey = @"isCurrentTrackInCollection";
 
 // Other
 NSString *const spotifyBundleIdentifier = @"com.spotify.client";

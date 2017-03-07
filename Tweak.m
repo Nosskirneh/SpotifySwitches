@@ -112,7 +112,7 @@ void addCurrentTrackToPlaylist(CFNotificationCenterRef center,
 }
 
 // Add to collection
-void addCurrentTrackToCollection(CFNotificationCenterRef center,
+void toggleCurrentTrackInCollection(CFNotificationCenterRef center,
                                void *observer,
                                CFStringRef name,
                                const void *object,
@@ -151,7 +151,7 @@ void addCurrentTrackToCollection(CFNotificationCenterRef center,
     CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, &addCurrentTrackToPlaylist, CFStringRef(addCurrentTrackToPlaylistNotification), NULL, 0);
         
     // Add to collection:
-    CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, &addCurrentTrackToCollection, CFStringRef(addCurrentTrackToCollectionNotification), NULL, 0);
+    CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, &toggleCurrentTrackInCollection, CFStringRef(toggleCurrentTrackInCollectionNotification), NULL, 0);
     
 
     // Save core
@@ -386,7 +386,6 @@ BOOL didRetrieveCallbacksHolder = NO;
 
 %new
 - (void)retrievePlaylists {
-    HBLogDebug(@"Updating playlists...");
     playlistContainer = [self playlists];
     playlists = [[NSMutableArray alloc] init];
 
@@ -461,7 +460,9 @@ BOOL didRetrieveCallbacksHolder = NO;
 - (void)setCurrentTrackURL:(SPPlayerTrack *)track {
     %orig;
     
+    [preferences setObject:[NSNumber numberWithBool:[auxActionModel isInCollection]] forKey:isCurrentTrackInCollectionKey];
     [preferences setObject:[NSNumber numberWithBool:!track] forKey:isCurrentTrackNullKey];
+    
     if (![preferences writeToFile:prefPath atomically:YES]) {
         HBLogError(@"Could not save preferences!");
     }
@@ -475,6 +476,15 @@ BOOL didRetrieveCallbacksHolder = NO;
 
 - (id)initWithCollectionPlatform:(id)arg1 adsManager:(id)arg2 trackMetadataQueue:(id)arg3 showsFollowService:(id)arg4 {
     return auxActionModel = %orig;
+}
+
+- (void)setInCollection:(BOOL)arg {
+    %orig;
+    // Update preferences
+    [preferences setObject:[NSNumber numberWithBool:arg] forKey:isCurrentTrackInCollectionKey];
+        if (![preferences writeToFile:prefPath atomically:YES]) {
+            HBLogError(@"Could not save preferences!");
+        }
 }
 
 %end
