@@ -17,6 +17,13 @@ SPPlaylistContainer *playlistContainer;
 SPPlaylistContainerCallbacksHolder *callbacksHolder;
 SPTNowPlayingAuxiliaryActionsModel *auxActionModel;
 
+// Method that updates changes to .plist
+void updateSettings() {
+    if (![preferences writeToFile:prefPath atomically:YES]) {
+        HBLogError(@"Could not save preferences!");
+    }
+}
+
 // Notifications methods
 // Offline
 void doEnableOfflineMode(CFNotificationCenterRef center,
@@ -46,8 +53,11 @@ void doToggleShuffle(CFNotificationCenterRef center,
     
     // Update state
     preferences = [[NSMutableDictionary alloc] initWithContentsOfFile:prefPath];
-    BOOL next = ![[preferences objectForKey:shuffleKey] boolValue];
-    [playbackController setGlobalShuffleMode:next];
+    BOOL enable = ![[preferences objectForKey:shuffleKey] boolValue];
+    [playbackController setGlobalShuffleMode:enable];
+    
+    [preferences setObject:[NSNumber numberWithBool:enable] forKey:shuffleKey];
+    updateSettings();
 }
 
 // Repeat
@@ -80,13 +90,11 @@ void doChangeConnectDevice(CFNotificationCenterRef center,
     for (SPTGaiaDevice *device in [gaia devices]) {
         if ([device.name isEqualToString:deviceName]) {
             [gaia activateDevice:device withCallback:nil];
-            HBLogDebug(@"Sending device %@ to Gaia", device);
             return;
         }
     }
 
      // No matching names
-     HBLogDebug(@"Found no matching device names, disconnecting");
      [gaia activateDevice:nil withCallback:nil];
 }
 
@@ -189,11 +197,8 @@ void toggleCurrentTrackInCollection(CFNotificationCenterRef center,
     [playbackController setRepeatMode:[[preferences objectForKey:repeatKey] intValue]];
     [playbackController setGlobalShuffleMode:[[preferences objectForKey:shuffleKey] boolValue]];
     [core setForcedOffline:[[preferences objectForKey:offlineKey] boolValue]];
-
-    // Save changes
-    if (![preferences writeToFile:prefPath atomically:YES]) {
-        HBLogError(@"Could not save preferences!");
-    }
+    
+    updateSettings();
 }
 
 %end
@@ -232,9 +237,7 @@ BOOL didRetrievePlaylists = NO;
 
     // Update value
     [preferences setObject:[NSNumber numberWithInteger:value] forKey:repeatKey];
-    if (![preferences writeToFile:prefPath atomically:YES]) {
-        HBLogError(@"Could not save preferences!");
-    }
+    updateSettings();
 }
 
 %end
@@ -285,10 +288,7 @@ BOOL didRetrievePlaylists = NO;
     // Update Connectify settings
     [preferences setObject:@"" forKey:activeDeviceKey];
     [preferences setObject:@[] forKey:devicesKey];
-    
-    if (![preferences writeToFile:prefPath atomically:YES]) {
-        HBLogError(@"Could not save preferences!");
-    }
+    updateSettings();
 }
 
 %end
@@ -301,10 +301,7 @@ BOOL didRetrievePlaylists = NO;
     %orig;
     BOOL current = [[preferences objectForKey:shuffleKey] boolValue];
     [preferences setObject:[NSNumber numberWithBool:current] forKey:shuffleKey];
-    
-    if (![preferences writeToFile:prefPath atomically:YES]) {
-        HBLogError(@"Could not save preferences!");
-    }
+    updateSettings();
 
 }
 
@@ -343,11 +340,8 @@ BOOL didRetrievePlaylists = NO;
     if (currentDevice != nil) {
         [preferences setObject:currentDevice.name forKey:activeDeviceKey];
     }
-    
-    // Save to .plist    
-    if (![preferences writeToFile:prefPath atomically:YES]) {
-        HBLogError(@"Could not save preferences!");
-    }
+
+    updateSettings();
 }
 
 // Method that changes Connect device
@@ -358,11 +352,8 @@ BOOL didRetrievePlaylists = NO;
     } else {
         [preferences setObject:@"" forKey:activeDeviceKey];
     }
-
-    // Save to .plist
-    if (![preferences writeToFile:prefPath atomically:YES]) {
-        HBLogError(@"Could not save preferences!");
-    }
+    
+    updateSettings();
 }
 
 %end
@@ -402,10 +393,8 @@ BOOL didRetrieveCallbacksHolder = NO;
     [preferences setObject:playlists forKey:playlistsKey];
     [playlists release];
     [playlist release];
-    
-    if (![preferences writeToFile:prefPath atomically:YES]) {
-        HBLogError(@"Could not save preferences!");
-    }
+
+    updateSettings();
 }
 
 %end
@@ -424,7 +413,6 @@ BOOL didRetrieveCallbacksHolder = NO;
         NSMutableDictionary *playlist = [playlists objectAtIndex:i];
         if ([[playlist objectForKey:@"URL"] isEqualToString:[url absoluteString]]) {
             [playlists removeObjectAtIndex:i];
-            HBLogDebug(@"Removed a playlist!");
         }
     }
 }
@@ -462,10 +450,7 @@ BOOL didRetrieveCallbacksHolder = NO;
     
     [preferences setObject:[NSNumber numberWithBool:[auxActionModel isInCollection]] forKey:isCurrentTrackInCollectionKey];
     [preferences setObject:[NSNumber numberWithBool:!track] forKey:isCurrentTrackNullKey];
-    
-    if (![preferences writeToFile:prefPath atomically:YES]) {
-        HBLogError(@"Could not save preferences!");
-    }
+    updateSettings();
 }
 
 %end
@@ -482,9 +467,7 @@ BOOL didRetrieveCallbacksHolder = NO;
     %orig;
     // Update preferences
     [preferences setObject:[NSNumber numberWithBool:arg] forKey:isCurrentTrackInCollectionKey];
-        if (![preferences writeToFile:prefPath atomically:YES]) {
-            HBLogError(@"Could not save preferences!");
-        }
+    updateSettings();
 }
 
 %end

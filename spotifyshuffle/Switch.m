@@ -27,25 +27,12 @@
 }
 
 - (void)applyState:(FSSwitchState)newState forSwitchIdentifier:(NSString *)switchIdentifier {
-    switch (newState) {
-        case FSSwitchStateIndeterminate:
+    if (newState == FSSwitchStateIndeterminate) {
             return;
-            
-        case FSSwitchStateOn:
-            [preferences setObject:[NSNumber numberWithBool:YES] forKey:shuffleKey];
-            CFNotificationCenterPostNotification(CFNotificationCenterGetDarwinNotifyCenter(), (CFStringRef)doToggleShuffleNotification, NULL, NULL, YES);
-            break;
-            
-        case FSSwitchStateOff:
-            [preferences setObject:[NSNumber numberWithBool:NO] forKey:shuffleKey];
-            CFNotificationCenterPostNotification(CFNotificationCenterGetDarwinNotifyCenter(), (CFStringRef)doToggleShuffleNotification, NULL, NULL, YES);
-            break;
     }
-    
-    if (![preferences writeToFile:prefPath atomically:YES]) {
-        HBLogError(@"Could not save preferences!");
-    }
-    
+
+    // Send notification
+    CFNotificationCenterPostNotification(CFNotificationCenterGetDarwinNotifyCenter(), (CFStringRef)doToggleShuffleNotification, NULL, NULL, YES);
     return;
 }
 

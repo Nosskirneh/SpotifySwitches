@@ -50,7 +50,6 @@
                                       [self clickedPlaylistAtIndex:i];
                                   }];
                 [playlistAlert addAction:playlistAction];
-                HBLogDebug(@"Added a playlist action!");
             }
         }
         
