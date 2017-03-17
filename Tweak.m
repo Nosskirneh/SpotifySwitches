@@ -113,9 +113,15 @@ void addCurrentTrackToPlaylist(CFNotificationCenterRef center,
 
     for (SPPlaylist *playlist in playlistContainer.actualPlaylists) {
         if ([playlist.name isEqualToString:chosenPlaylist]) {
-            SPPlayerTrack *track = ((SPPlayerTrack *)[statefulPlayer currentTrack]);
-            HBLogDebug(@"Trying to add track '%@' to playlist '%@'", track.URI, playlist.name);
-            NSArray *tracks = [[NSArray alloc] initWithObjects:track.URI, nil];
+            SPPlayerTrack *currentTrack = ((SPPlayerTrack *)[statefulPlayer currentTrack]);
+            for (NSURL* trackURL in [playlist trackURLSet]) {
+                if ([trackURL isEqual:currentTrack.URI]) {
+                    HBLogDebug(@"Found duplicate!");
+                    return;
+                }
+            }
+            HBLogDebug(@"Adding track '%@' to playlist '%@'", currentTrack.URI, playlist.name);
+            NSArray *tracks = [[NSArray alloc] initWithObjects:currentTrack.URI, nil];
             [playlist addTrackURLs:tracks];
             [tracks release];
         }
@@ -427,7 +433,7 @@ BOOL didRetrieveCallbacksHolder = NO;
     playlists = [preferences objectForKey:playlistsKey];
     for (int i = 0; i < playlists.count; i++) {
         NSMutableDictionary *playlist = [playlists objectAtIndex:i];
-        if ([[playlist objectForKey:@"URL"] isEqualToString:[url absoluteString]]) {
+        if ([[playlist objectForKey:@"URL"] isEqual:url]) {
             [playlists removeObjectAtIndex:i];
         }
     }

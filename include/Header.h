@@ -95,6 +95,7 @@ NSString *const spotifyBundleIdentifier = @"com.spotify.client";
 
 @interface SPPlaylist : NSObject
 - (void)addTrackURLs:(id)arg;
+- (id)trackURLSet;
 @property (nonatomic, assign, readwrite) NSURL *URL;
 @property (nonatomic, assign, readwrite) NSString *name;
 @property (nonatomic, assign, readwrite) BOOL isWriteable;
