@@ -59,7 +59,6 @@ NSString *const spotifyBundleIdentifier = @"com.spotify.client";
 @interface SPTNowPlayingPlaybackController : NSObject
 - (void)setGlobalShuffleMode:(BOOL)arg;
 - (void)setRepeatMode:(NSUInteger)value;
-- (void)setPaused:(BOOL)arg;
 @end
 
 
@@ -88,8 +87,6 @@ NSString *const spotifyBundleIdentifier = @"com.spotify.client";
 - (void)activateDevice:(id)device withCallback:(id)callback;
 @end
 
-
-//Testing
 
 @interface SPPlayerTrack : NSObject
 @property (nonatomic, assign, readwrite) NSURL *URI;

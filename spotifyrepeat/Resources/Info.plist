@@ -28,5 +28,7 @@
 	<string>SpotifyRepeatSwitch</string>
 	<key>alternate-action-url</key>
 	<string>prefs:</string>
+	<key>primary-color</key>
+	<string>#1ED760</string>
 </dict>
 </plist>

@@ -114,10 +114,10 @@ void addCurrentTrackToPlaylist(CFNotificationCenterRef center,
     for (SPPlaylist *playlist in playlistContainer.actualPlaylists) {
         if ([playlist.name isEqualToString:chosenPlaylist]) {
             SPPlayerTrack *track = ((SPPlayerTrack *)[statefulPlayer currentTrack]);
-                HBLogDebug(@"Trying to add track '%@' to playlist '%@'", track.URI, playlist.name);
-                NSArray *tracks = [[NSArray alloc] initWithObjects:track.URI, nil];
-                [playlist addTrackURLs:tracks];
-                [tracks release];
+            HBLogDebug(@"Trying to add track '%@' to playlist '%@'", track.URI, playlist.name);
+            NSArray *tracks = [[NSArray alloc] initWithObjects:track.URI, nil];
+            [playlist addTrackURLs:tracks];
+            [tracks release];
         }
     }
 }
@@ -458,12 +458,12 @@ BOOL didRetrieveCallbacksHolder = NO;
 %end
 
 
+
 // Save updated track
 %hook SPTNowPlayingBarModel
 
 - (void)setCurrentTrackURL:(SPPlayerTrack *)track {
     %orig;
-    
     [preferences setObject:[NSNumber numberWithBool:[auxActionModel isInCollection]] forKey:isCurrentTrackInCollectionKey];
     [preferences setObject:[NSNumber numberWithBool:!track] forKey:isCurrentTrackNullKey];
     updateSettings();

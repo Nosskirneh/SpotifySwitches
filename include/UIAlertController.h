@@ -3,6 +3,11 @@
 // http://stackoverflow.com/questions/26554894/how-to-present-uialertcontroller-when-not-in-a-view-controller#_=_
 #import <objc/runtime.h>
 
+
+@interface UIWindow (Private)
+- (void)_setSecure:(BOOL)arg1; // In order to show in lockscreen at iOS 8+. Thanks /u/rob311
+@end
+
 @interface UIAlertController (Window)
 
 - (void)show;
@@ -52,6 +57,7 @@
     self.alertWindow.windowLevel = topWindow.windowLevel + 1;
     
     [self.alertWindow makeKeyAndVisible];
+    [self.alertWindow _setSecure:YES];
     [self.alertWindow.rootViewController presentViewController:self animated:animated completion:nil];
 }
 

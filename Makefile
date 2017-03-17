@@ -8,6 +8,7 @@ include $(THEOS_MAKE_PATH)/tweak.mk
 # Sometimes theos replaces my symlink :(
 before-stage::
 	rm tweak.xm; ln -s Tweak.m Tweak.xm
+	find . -name ".DS_Store" -delete
 
 before-install::
 	~/Dropbox/bin/updateIP.sh && source ~/Dropbox/bin/theos.sh
