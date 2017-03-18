@@ -4,6 +4,8 @@
 #import <UIKit/UIApplication2.h>
 #import "../include/Header.h"
 #import "../include/UIAlertController.h"
+#import <Foundation/Foundation.h>
+#import "../include/Unlock.h"
 
 @interface Connectify : NSObject <LAListener>
 
