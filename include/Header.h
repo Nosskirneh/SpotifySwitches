@@ -21,12 +21,16 @@ NSString *const doChangeConnectDeviceNotification = @"se.nosskirneh.spotifyswitc
 
 // Add to playlist
 NSString *const addCurrentTrackToPlaylistNotification = @"se.nosskirneh.spotifyswitches/addCurrentTrackToPlaylist";
+#define specifiedPlaylistName [preferences objectForKey:@"specifiedPlaylistName"]
 
 // Add to collection
 NSString *const toggleCurrentTrackInCollectionNotification = @"se.nosskirneh.spotifyswitches/toggleCurrentTrackInCollection";
 
 // Incognito Mode
 NSString *const toggleIncognitoModeNotification = @"se.nosskirneh.spotifyswitches/toggleIncognitoMode";
+
+// Preferences
+NSString *const preferencesChangedNotification = @"se.nosskirneh.spotifyswitches/preferencesChanged";
 
 
 
@@ -59,6 +63,8 @@ NSString *const spotifyBundleIdentifier = @"com.spotify.client";
 @interface SPTNowPlayingPlaybackController : NSObject
 - (void)setGlobalShuffleMode:(BOOL)arg;
 - (void)setRepeatMode:(NSUInteger)value;
+- (void)setPaused:(BOOL)arg;
+- (BOOL)isPaused;
 @end
 
 

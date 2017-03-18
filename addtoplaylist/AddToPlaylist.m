@@ -22,6 +22,7 @@
 // Called when the user-defined action is recognized, shows selection alert
 - (void)activator:(LAActivator *)activator receiveEvent:(LAEvent *)event {
     [event setHandled:YES];
+    
     UIAlertController *playlistAlert = [UIAlertController
                                         alertControllerWithTitle:@"Add to Playlist"
                                         message:@"Add current track to which playlist?"
@@ -39,6 +40,15 @@
             UIAlertAction *launchAppAction = [self createLaunchAppAction:@"Play some music"];
             [playlistAlert addAction:launchAppAction];
         } else {
+            
+            // Has user specified playlist in Preferences?
+            if (specifiedPlaylistName != nil && ![specifiedPlaylistName isEqualToString:@""]) {
+                HBLogDebug(@"Found non-empty specified playlist!");
+                
+                CFNotificationCenterPostNotification(CFNotificationCenterGetDarwinNotifyCenter(), (CFStringRef)addCurrentTrackToPlaylistNotification, NULL, NULL, YES);
+                return;
+            }
+            
             playlists = [preferences objectForKey:playlistsKey];
             
             UIAlertAction *playlistAction;

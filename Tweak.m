@@ -1,4 +1,5 @@
 #import "include/Header.h"
+#import <AVFoundation/AVAudioSession.h>
 
 // Connect
 SPTGaiaDeviceManager *gaia;
@@ -21,13 +22,24 @@ SPTNowPlayingAuxiliaryActionsModel *auxActionModel;
 SPSession *session;
 
 // Method that updates changes to .plist
-void updateSettings() {
+void writeToSettings() {
     if (![preferences writeToFile:prefPath atomically:YES]) {
         HBLogError(@"Could not save preferences!");
     }
 }
 
+
 // Notifications methods
+// Update preferences
+void updateSettings(CFNotificationCenterRef center,
+                         void *observer,
+                         CFStringRef name,
+                         const void *object,
+                         CFDictionaryRef userInfo) {
+
+    preferences = [[NSMutableDictionary alloc] initWithContentsOfFile:prefPath];
+}
+
 // Offline
 void doEnableOfflineMode(CFNotificationCenterRef center,
                      void *observer,
@@ -60,7 +72,7 @@ void doToggleShuffle(CFNotificationCenterRef center,
     [playbackController setGlobalShuffleMode:enable];
     
     [preferences setObject:[NSNumber numberWithBool:enable] forKey:shuffleKey];
-    updateSettings();
+    writeToSettings();
 }
 
 // Repeat
@@ -107,25 +119,36 @@ void addCurrentTrackToPlaylist(CFNotificationCenterRef center,
                            CFStringRef name,
                            const void *object,
                            CFDictionaryRef userInfo) {
-    // Update chosen playlist
-    preferences = [[NSMutableDictionary alloc] initWithContentsOfFile:prefPath];
-    NSString *chosenPlaylist = [preferences objectForKey:chosenPlaylistKey];
+    NSString *chosenPlaylist;
+    
+    // Has user specified playlist in Preferences?
+    if (specifiedPlaylistName != nil && ![specifiedPlaylistName isEqualToString:@""]) {
+        HBLogDebug(@"Recieved notification and will add to specified playlist: %@", specifiedPlaylistName);
+        chosenPlaylist = [preferences objectForKey:@"specifiedPlaylistName"];
+    } else {
+        // Update chosen playlist
+        preferences = [[NSMutableDictionary alloc] initWithContentsOfFile:prefPath];
+        chosenPlaylist = [preferences objectForKey:chosenPlaylistKey];
+    }
 
     for (SPPlaylist *playlist in playlistContainer.actualPlaylists) {
         if ([playlist.name isEqualToString:chosenPlaylist]) {
             SPPlayerTrack *currentTrack = ((SPPlayerTrack *)[statefulPlayer currentTrack]);
             for (NSURL* trackURL in [playlist trackURLSet]) {
-                if ([trackURL isEqual:currentTrack.URI]) {
+                if ([[preferences objectForKey:@"skipDuplicates"] boolValue] && [trackURL isEqual:currentTrack.URI]) {
                     HBLogDebug(@"Found duplicate!");
                     return;
                 }
             }
+
             HBLogDebug(@"Adding track '%@' to playlist '%@'", currentTrack.URI, playlist.name);
             NSArray *tracks = [[NSArray alloc] initWithObjects:currentTrack.URI, nil];
             [playlist addTrackURLs:tracks];
             [tracks release];
+            return;
         }
     }
+    HBLogDebug(@"Found no such playlist!");
 }
 
 // Add to collection
@@ -160,6 +183,9 @@ void toggleIncognitoMode(CFNotificationCenterRef center,
     
     
     // Add observers
+    // Preferences
+    CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, &updateSettings, CFStringRef(preferencesChangedNotification), NULL, 0);
+
     // Offline:
     CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, &doEnableOfflineMode, CFStringRef(doEnableOfflineModeNotification), NULL, 0);
     CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, &doDisableOfflineMode, CFStringRef(doDisableOfflineModeNotification), NULL, 0);
@@ -220,7 +246,7 @@ void toggleIncognitoMode(CFNotificationCenterRef center,
     [playbackController setGlobalShuffleMode:[[preferences objectForKey:shuffleKey] boolValue]];
     [core setForcedOffline:[[preferences objectForKey:offlineKey] boolValue]];
     
-    updateSettings();
+    writeToSettings();
 }
 
 %end
@@ -259,7 +285,7 @@ BOOL didRetrievePlaylists = NO;
 
     // Update value
     [preferences setObject:[NSNumber numberWithInteger:value] forKey:repeatKey];
-    updateSettings();
+    writeToSettings();
 }
 
 %end
@@ -310,7 +336,7 @@ BOOL didRetrievePlaylists = NO;
     // Update Connectify settings
     [preferences setObject:@"" forKey:activeDeviceKey];
     [preferences setObject:@[] forKey:devicesKey];
-    updateSettings();
+    writeToSettings();
 }
 
 %end
@@ -323,7 +349,7 @@ BOOL didRetrievePlaylists = NO;
     %orig;
     BOOL current = [[preferences objectForKey:shuffleKey] boolValue];
     [preferences setObject:[NSNumber numberWithBool:current] forKey:shuffleKey];
-    updateSettings();
+    writeToSettings();
 
 }
 
@@ -363,7 +389,7 @@ BOOL didRetrievePlaylists = NO;
         [preferences setObject:currentDevice.name forKey:activeDeviceKey];
     }
 
-    updateSettings();
+    writeToSettings();
 }
 
 // Method that changes Connect device
@@ -375,7 +401,7 @@ BOOL didRetrievePlaylists = NO;
         [preferences setObject:@"" forKey:activeDeviceKey];
     }
     
-    updateSettings();
+    writeToSettings();
 }
 
 %end
@@ -416,7 +442,7 @@ BOOL didRetrieveCallbacksHolder = NO;
     [playlists release];
     [playlist release];
 
-    updateSettings();
+    writeToSettings();
 }
 
 %end
@@ -465,14 +491,23 @@ BOOL didRetrieveCallbacksHolder = NO;
 
 
 
-// Save updated track
 %hook SPTNowPlayingBarModel
 
 - (void)setCurrentTrackURL:(SPPlayerTrack *)track {
     %orig;
+    
+    preferences = [[NSMutableDictionary alloc] initWithContentsOfFile:prefPath];
+    
+    // Pause if volume is 0 % and changing track
+        if ([[preferences objectForKey:@"pauseOnMute"] boolValue] && ![playbackController isPaused] && track != nil && [[AVAudioSession sharedInstance] outputVolume] == 0) {
+            HBLogDebug(@"Pausing due to low volume!");
+            [playbackController setPaused:YES];
+        }
+    
+    // Save updated track
     [preferences setObject:[NSNumber numberWithBool:[auxActionModel isInCollection]] forKey:isCurrentTrackInCollectionKey];
     [preferences setObject:[NSNumber numberWithBool:!track] forKey:isCurrentTrackNullKey];
-    updateSettings();
+    writeToSettings();
 }
 
 %end
@@ -489,7 +524,7 @@ BOOL didRetrieveCallbacksHolder = NO;
     %orig;
     // Update preferences
     [preferences setObject:[NSNumber numberWithBool:arg] forKey:isCurrentTrackInCollectionKey];
-    updateSettings();
+    writeToSettings();
 }
 
 %end
@@ -507,14 +542,14 @@ BOOL didRetrieveCallbacksHolder = NO;
     %orig;
     
     [preferences setObject:[NSNumber numberWithBool:YES] forKey:incognitoKey];
-    updateSettings();
+    writeToSettings();
 }
 
 - (void)disableIncognitoMode {
     %orig;
     
     [preferences setObject:[NSNumber numberWithBool:NO] forKey:incognitoKey];
-    updateSettings();
+    writeToSettings();
 }
 
 %end

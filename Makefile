@@ -23,4 +23,5 @@ SUBPROJECTS += connectify
 SUBPROJECTS += addtoplaylist
 SUBPROJECTS += addtocollection
 SUBPROJECTS += spotifyincognito
+SUBPROJECTS += ssprefs
 include $(THEOS_MAKE_PATH)/aggregate.mk

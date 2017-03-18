@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>items</key>
+	<array>
+		<dict>
+			<key>cell</key>
+			<string>PSGroupCell</string>
+			<key>label</key>
+			<string>Add to Playlist</string>
+		</dict>
+
+		<dict>
+			<key>PostNotification</key>
+			<string>se.nosskirneh.spotifyswitches/preferencesChanged</string>
+			<key>cell</key>
+			<string>PSSwitchCell</string>
+			<key>default</key>
+			<true/>
+			<key>defaults</key>
+			<string>se.nosskirneh.spotifyswitches</string>
+			<key>key</key>
+			<string>skipDuplicates</string>
+			<key>label</key>
+			<string>Skip duplicates</string>
+		</dict>
+
+		<dict>
+			<key>PostNotification</key>
+			<string>se.nosskirneh.spotifyswitches/preferencesChanged</string>
+			<key>cell</key>
+			<string>PSEditTextCell</string>
+			<key>default</key>
+			<string></string>
+			<key>defaults</key>
+			<string>se.nosskirneh.spotifyswitches</string>
+			<key>key</key>
+			<string>specifiedPlaylistName</string>
+			<key>label</key>
+			<string>Playlist name</string>
+		</dict>
+
+
+
+
+		<dict>
+			<key>cell</key>
+			<string>PSGroupCell</string>
+			<key>label</key>
+			<string>Other</string>
+		</dict>
+		<dict>
+			<key>PostNotification</key>
+			<string>se.nosskirneh.spotifyswitches/preferencesChanged</string>
+			<key>cell</key>
+			<string>PSSwitchCell</string>
+			<key>default</key>
+			<false/>
+			<key>defaults</key>
+			<string>se.nosskirneh.spotifyswitches</string>
+			<key>key</key>
+			<string>pauseOnMute</string>
+			<key>label</key>
+			<string>Pause on mute</string>
+		</dict>
+
+
+
+		<dict>
+			<key>cell</key>
+			<string>PSGroupCell</string>
+			<key>label</key>
+			<string>About</string>
+		</dict>
+		<dict>
+			<key>action</key>
+			<string>sendEmail</string>
+			<key>icon</key>
+			<string>mail.png</string>
+			<key>cell</key>
+			<string>PSButtonCell</string>
+			<key>label</key>
+			<string>Email me with issues</string>
+		</dict>
+		<dict>
+			<key>action</key>
+			<string>donate</string>
+			<key>cell</key>
+			<string>PSButtonCell</string>
+			<key>icon</key>
+			<string>donate.png</string>
+			<key>label</key>
+			<string>Buy me a beer</string>
+		</dict>
+		<dict>
+			<key>action</key>
+			<string>sourceCode</string>
+			<key>cell</key>
+			<string>PSButtonCell</string>
+			<key>icon</key>
+			<string>github.png</string>
+			<key>label</key>
+			<string>Source Code on GitHub</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSGroupCell</string>
+			<key>footerAlignment</key>
+			<integer>1</integer>
+			<key>footerText</key>
+			<string>© 2017 Andreas Henriksson</string>
+		</dict>
+	</array>
+
+
+	<key>title</key>
+	<string>SpotifySwitches</string>
+</dict>
+</plist>
