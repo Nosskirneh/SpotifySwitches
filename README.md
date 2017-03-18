@@ -10,6 +10,7 @@ With this package you will be able to:
 * Add current track to playlist
 * Add current track to collection
 * Control Offline Mode
+* Control Incognito Mode
 * Control Shuffle
 * Control Repeat
 * More coming…
