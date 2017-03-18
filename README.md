@@ -1,7 +1,7 @@
 # SpotifySwitches
 Compatible with iOS 8, 9 and 10.
 
-Requires [Spotify Music](https://itunes.apple.com/us/app/spotify-music/id324684580?mt=8) from AppStore. Tested on Spotify version 7.8.0.
+Requires [Spotify Music](https://itunes.apple.com/us/app/spotify-music/id324684580?mt=8) from AppStore. Tested on Spotify version 7.9.0.
 
 Flipswitches and more for Spotify.
 
