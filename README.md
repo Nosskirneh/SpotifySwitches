@@ -13,6 +13,6 @@ With this package you will be able to:
 * Control Incognito Mode
 * Control Shuffle
 * Control Repeat
-* More coming…
+* Automatically pause Spotify on 0% volume (optional)
 
 This tweak will also initialize Spotify with whatever setting previously assigned it to. For example: if shuffle is turned on and you exit Spotify while being offline, on the next Spotify launch the default Spotify behaviour would be to start with shuffle turned off. This tweak fixes that.
