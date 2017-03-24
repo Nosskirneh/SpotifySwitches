@@ -115,7 +115,6 @@ NSString *const spotifyBundleIdentifier = @"com.spotify.client";
 
 @interface SPPlaylistContainerCallbacksHolder : NSObject
 - (id)playlists;
-- (void)retrievePlaylists;
 @end
 
 

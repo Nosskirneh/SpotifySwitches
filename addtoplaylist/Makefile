@@ -1,8 +1,8 @@
 include $(THEOS)/makefiles/common.mk
 
-TWEAK_NAME = addToPlaylist
-addToPlaylist_FILES = AddToPlaylist.xm
-addToPlaylist_LIBRARIES = activator
+TWEAK_NAME = AddToPlaylist
+AddToPlaylist_FILES = AddToPlaylist.xm
+AddToPlaylist_LIBRARIES = activator
 
 include $(THEOS_MAKE_PATH)/tweak.mk
 

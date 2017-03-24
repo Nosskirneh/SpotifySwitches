@@ -1,10 +1,10 @@
 include $(THEOS)/makefiles/common.mk
 
-BUNDLE_NAME = SSPrefs
-SSPrefs_FILES = SpotifySwitchesPrefs.m 
-SSPrefs_INSTALL_PATH = /Library/PreferenceBundles
-SSPrefs_FRAMEWORKS = UIKit
-SSPrefs_PRIVATE_FRAMEWORKS = Preferences
+BUNDLE_NAME = SpotifySwitches
+SpotifySwitches_FILES = SpotifySwitchesPrefs.m 
+SpotifySwitches_INSTALL_PATH = /Library/PreferenceBundles
+SpotifySwitches_FRAMEWORKS = UIKit
+SpotifySwitches_PRIVATE_FRAMEWORKS = Preferences
 
 include $(THEOS_MAKE_PATH)/bundle.mk
 

@@ -28,6 +28,26 @@ void writeToSettings() {
     }
 }
 
+void fetchPlaylists() {
+    playlistContainer = [callbacksHolder playlists];
+    playlists = [[NSMutableArray alloc] init];
+    
+    for (SPPlaylist *list in playlistContainer.actualPlaylists) {
+        if (list.isWriteable && ![list.name isEqualToString:@""]) {
+            playlist = [[NSMutableDictionary alloc] init];
+            [playlist setObject:[list.URL absoluteString] forKey:@"URL"];
+            [playlist setObject:list.name forKey:@"name"];
+            [playlists addObject:playlist];
+        }
+    }
+    
+    // Save playlists to plist in order to share with SpringBoard
+    [preferences setObject:playlists forKey:playlistsKey];
+    [playlists release];
+    [playlist release];
+    writeToSettings();
+}
+
 
 // Notifications methods
 // Update preferences
@@ -262,14 +282,11 @@ BOOL didRetrievePlaylists = NO;
 
     if (!didRetrievePlaylists) { // Only retrieve playlists once
         didRetrievePlaylists = YES;
-        
-        // Retrieve playlists
-        [callbacksHolder retrievePlaylists];
+        fetchPlaylists();
     }
 }
 
 %end
-
 
 
 %hook SPTNowPlayingPlaybackController
@@ -395,12 +412,7 @@ BOOL didRetrievePlaylists = NO;
 // Method that changes Connect device
 - (void)activateDevice:(SPTGaiaDevice *)device withCallback:(id)arg {
     %orig;
-    if (device != nil) {
-        [preferences setObject:device.name forKey:activeDeviceKey];
-    } else {
-        [preferences setObject:@"" forKey:activeDeviceKey];
-    }
-    
+    [preferences setObject: (device ? device.name : @"") forKey:activeDeviceKey];
     writeToSettings();
 }
 
@@ -410,39 +422,10 @@ BOOL didRetrievePlaylists = NO;
 
 // Add to playlist
 
-BOOL didRetrieveCallbacksHolder = NO;
-
 %hook SPPlaylistContainerCallbacksHolder
 
 - (id)initWithObjc:(id)arg {
-    if (!didRetrieveCallbacksHolder) {
-        didRetrieveCallbacksHolder = YES;
-        return callbacksHolder = %orig;
-    }
-    
-    return %orig;
-}
-
-%new
-- (void)retrievePlaylists {
-    playlistContainer = [self playlists];
-    playlists = [[NSMutableArray alloc] init];
-
-    for (SPPlaylist *list in playlistContainer.actualPlaylists) {
-        if (list.isWriteable && ![list.name isEqualToString:@""]) {
-            playlist = [[NSMutableDictionary alloc] init];
-            [playlist setObject:[list.URL absoluteString] forKey:@"URL"];
-            [playlist setObject:list.name forKey:@"name"];
-            [playlists addObject:playlist];
-        }
-    }
-    
-    // Save playlists to plist in order to share with SpringBoard
-    [preferences setObject:playlists forKey:playlistsKey];
-    [playlists release];
-    [playlist release];
-
-    writeToSettings();
+    return callbacksHolder ? %orig : callbacksHolder = %orig;
 }
 
 %end
@@ -463,18 +446,6 @@ BOOL didRetrieveCallbacksHolder = NO;
             [playlists removeObjectAtIndex:i];
         }
     }
-}
-
-%end
-
-
-// Update playlists list on change of "Recently Played" section
-%hook SPTRecentlyPlayedEntityList
-
-- (void)recentlyPlayedModelDidReload:(id)arg {
-    %orig;
-    // Update playlists
-    [callbacksHolder retrievePlaylists];
 }
 
 %end

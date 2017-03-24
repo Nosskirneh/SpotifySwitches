@@ -5,7 +5,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>English</string>
 	<key>CFBundleExecutable</key>
-	<string>SSPrefs</string>
+	<string>SpotifySwitches</string>
 	<key>CFBundleIdentifier</key>
 	<string>se.nosskirneh.ssprefs</string>
 	<key>CFBundleInfoDictionaryVersion</key>

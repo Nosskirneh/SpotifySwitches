@@ -14,14 +14,14 @@ before-install::
 	~/Dropbox/bin/updateIP.sh && source ~/Dropbox/bin/theos.sh
 
 internal-after-install::
-	install.exec "killall -9 SpringBoard"
+	install.exec "killall -9 Spotify"
 
-SUBPROJECTS += spotifyofflinemode
-SUBPROJECTS += spotifyshuffle
-SUBPROJECTS += spotifyrepeat
-SUBPROJECTS += connectify
-SUBPROJECTS += addtoplaylist
-SUBPROJECTS += addtocollection
-SUBPROJECTS += spotifyincognito
-SUBPROJECTS += ssprefs
+# SUBPROJECTS += spotifyofflinemode
+# SUBPROJECTS += spotifyshuffle
+# SUBPROJECTS += spotifyrepeat
+# SUBPROJECTS += connectify
+# SUBPROJECTS += addtoplaylist
+# SUBPROJECTS += addtocollection
+# SUBPROJECTS += spotifyincognito
+SUBPROJECTS += spotifyswitches
 include $(THEOS_MAKE_PATH)/aggregate.mk

@@ -11,7 +11,7 @@
 
 - (NSArray *)specifiers {
 	if (!_specifiers) {
-		_specifiers = [[self loadSpecifiersFromPlistName:@"SSPrefs" target:self] retain];
+		_specifiers = [[self loadSpecifiersFromPlistName:@"SpotifySwitches" target:self] retain];
 	}
 
 	return _specifiers;
