@@ -218,6 +218,19 @@ void toggleIncognitoMode(CFNotificationCenterRef center,
 %end
 
 
+%hook SPBarViewController
+
+// A little later in app launch
+- (void)viewDidLoad {
+    %orig;
+
+    // Init offline mode
+    [core setForcedOffline:[[preferences objectForKey:offlineKey] boolValue]];
+}
+
+%end
+
+
 BOOL didRetrievePlaylists = NO;
 
 // A little more later in app launch
