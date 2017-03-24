@@ -26,7 +26,7 @@
             <key>cell</key>
             <string>PSSwitchCell</string>
             <key>default</key>
-            <true/>
+            <false/>
             <key>defaults</key>
             <string>se.nosskirneh.spotifyswitches</string>
             <key>key</key>

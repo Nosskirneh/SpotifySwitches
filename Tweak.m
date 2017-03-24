@@ -197,40 +197,6 @@ void toggleIncognitoMode(CFNotificationCenterRef center,
 %hook SPCore
 
 - (id)init {
-    // Init settings file
-    preferences = [[NSMutableDictionary alloc] initWithContentsOfFile:prefPath];
-    if (!preferences) preferences = [[NSMutableDictionary alloc] init];
-    
-    
-    // Add observers
-    // Preferences
-    CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, &updateSettings, CFStringRef(preferencesChangedNotification), NULL, 0);
-
-    // Offline:
-    CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, &doEnableOfflineMode, CFStringRef(doEnableOfflineModeNotification), NULL, 0);
-    CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, &doDisableOfflineMode, CFStringRef(doDisableOfflineModeNotification), NULL, 0);
-    
-    // Shuffle:
-    CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, &doToggleShuffle, CFStringRef(doToggleShuffleNotification), NULL, 0);
-        
-    // Repeat:
-    CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, &doEnableRepeat, CFStringRef(doEnableRepeatNotification), NULL, 0);
-    CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, &doDisableRepeat, CFStringRef(doDisableRepeatNotification), NULL, 0);
-    
-    // Connect:
-    CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, &doChangeConnectDevice, CFStringRef(doChangeConnectDeviceNotification), NULL, 0);
-        
-    // Add to playlist:
-    CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, &addCurrentTrackToPlaylist, CFStringRef(addCurrentTrackToPlaylistNotification), NULL, 0);
-        
-    // Add to collection:
-    CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, &toggleCurrentTrackInCollection, CFStringRef(toggleCurrentTrackInCollectionNotification), NULL, 0);
-
-    // Shuffle:
-    CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, &toggleIncognitoMode, CFStringRef(toggleIncognitoModeNotification), NULL, 0);
-
-
-    // Save core
     return core = %orig;
 }
 
@@ -247,26 +213,6 @@ void toggleIncognitoMode(CFNotificationCenterRef center,
     }]];
     [offlineViewController presentViewController:alertController animated:YES completion:nil];
     return;
-}
-
-%end
-
-
-%hook SPBarViewController
-
-// A little later in app launch
-- (void)viewDidLoad {
-    %orig;
-    
-    // Set activeDevice to null
-    [preferences setObject:@"" forKey:activeDeviceKey];
-
-    // Override Spotify values to current flipswitch values
-    [playbackController setRepeatMode:[[preferences objectForKey:repeatKey] intValue]];
-    [playbackController setGlobalShuffleMode:[[preferences objectForKey:shuffleKey] boolValue]];
-    [core setForcedOffline:[[preferences objectForKey:offlineKey] boolValue]];
-    
-    writeToSettings();
 }
 
 %end
@@ -524,3 +470,43 @@ BOOL didRetrievePlaylists = NO;
 }
 
 %end
+
+
+%ctor {
+    // Init settings file
+    preferences = [[NSMutableDictionary alloc] initWithContentsOfFile:prefPath];
+    if (!preferences) preferences = [[NSMutableDictionary alloc] init];
+        
+        
+    // Set activeDevice to null
+    [preferences setObject:@"" forKey:activeDeviceKey];
+    writeToSettings();
+    
+    
+    // Add observers
+    // Preferences
+    CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, &updateSettings, CFStringRef(preferencesChangedNotification), NULL, 0);
+    
+    // Offline:
+    CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, &doEnableOfflineMode, CFStringRef(doEnableOfflineModeNotification), NULL, 0);
+    CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, &doDisableOfflineMode, CFStringRef(doDisableOfflineModeNotification), NULL, 0);
+    
+    // Shuffle:
+    CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, &doToggleShuffle, CFStringRef(doToggleShuffleNotification), NULL, 0);
+    
+    // Repeat:
+    CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, &doEnableRepeat, CFStringRef(doEnableRepeatNotification), NULL, 0);
+    CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, &doDisableRepeat, CFStringRef(doDisableRepeatNotification), NULL, 0);
+    
+    // Connect:
+    CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, &doChangeConnectDevice, CFStringRef(doChangeConnectDeviceNotification), NULL, 0);
+    
+    // Add to playlist:
+    CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, &addCurrentTrackToPlaylist, CFStringRef(addCurrentTrackToPlaylistNotification), NULL, 0);
+    
+    // Add to collection:
+    CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, &toggleCurrentTrackInCollection, CFStringRef(toggleCurrentTrackInCollectionNotification), NULL, 0);
+    
+    // Shuffle:
+    CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, &toggleIncognitoMode, CFStringRef(toggleIncognitoModeNotification), NULL, 0);
+}
