@@ -60,6 +60,11 @@ NSString *const spotifyBundleIdentifier = @"com.spotify.client";
 @end
 
 
+@interface SPUser : NSObject
+@property (nonatomic, readwrite, assign) NSString *username;
+@end
+
+
 @interface SPTNowPlayingPlaybackController : NSObject
 - (void)setGlobalShuffleMode:(BOOL)arg;
 - (void)setRepeatMode:(NSUInteger)value;

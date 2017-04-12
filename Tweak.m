@@ -21,6 +21,8 @@ SPTNowPlayingAuxiliaryActionsModel *auxActionModel;
 // Incognito Mode
 SPSession *session;
 
+static int fetchCallCount = 0;
+
 // Method that updates changes to .plist
 void writeToSettings() {
     if (![preferences writeToFile:prefPath atomically:YES]) {
@@ -28,6 +30,7 @@ void writeToSettings() {
     }
 }
 
+// Method that fetches playlists
 void fetchPlaylists() {
     playlistContainer = [callbacksHolder playlists];
     playlists = [[NSMutableArray alloc] init];
@@ -49,7 +52,7 @@ void fetchPlaylists() {
 }
 
 
-// Notifications methods
+/* Notifications methods */
 // Update preferences
 void updateSettings(CFNotificationCenterRef center,
                          void *observer,
@@ -190,9 +193,9 @@ void toggleIncognitoMode(CFNotificationCenterRef center,
     BOOL enabled = [session isIncognitoModeEnabled];
     enabled ? [session disableIncognitoMode] : [session enableIncognitoMode];
 }
+/* ------- */
 
-
-
+/* Hooks */
 // Class that forces Offline Mode
 %hook SPCore
 
@@ -231,18 +234,18 @@ void toggleIncognitoMode(CFNotificationCenterRef center,
 %end
 
 
-BOOL didRetrievePlaylists = NO;
+// Update list of playlists on change of "Recently Played" section
+// is also executed on app launch
+%hook SPTRecentlyPlayedEntityList
 
-// A little more later in app launch
-%hook SPTTabBarController
-
-- (void)viewDidAppear:(BOOL)arg {
+- (void)recentlyPlayedModelDidReload:(id)arg {
     %orig;
 
-    if (!didRetrievePlaylists) { // Only retrieve playlists once
-        didRetrievePlaylists = YES;
+    // Only fetch once instead of twice
+    if (fetchCallCount % 2 == 0) {
         fetchPlaylists();
     }
+    fetchCallCount++;
 }
 
 %end
@@ -390,26 +393,6 @@ BOOL didRetrievePlaylists = NO;
 %end
 
 
-%hook SPTPlaylistCosmosModel
-
-// Fortunately the URL is given, so we can match it against the smaller array
-// and remove the matching playlist.
-- (void)removePlaylistOrFolderURL:(id)url inFolderURL:(id)arg2 completion:(id)arg3 {
-    %orig;
-    HBLogDebug(@"Trying to remove playlist with url: %@", url);
-    
-    playlists = [preferences objectForKey:playlistsKey];
-    for (int i = 0; i < playlists.count; i++) {
-        NSMutableDictionary *playlist = [playlists objectAtIndex:i];
-        if ([[playlist objectForKey:@"URL"] isEqual:url]) {
-            [playlists removeObjectAtIndex:i];
-        }
-    }
-}
-
-%end
-
-
 // Class that stores current track
 %hook SPTStatefulPlayer
 
@@ -480,6 +463,21 @@ BOOL didRetrievePlaylists = NO;
     
     [preferences setObject:[NSNumber numberWithBool:NO] forKey:incognitoKey];
     writeToSettings();
+}
+
+%end
+
+/* ------- */
+
+
+%hook SPUser
+
+- (id)initWithUserData:(id)arg {
+    SPUser *user = %orig;
+
+    // Removing this key will create instances of `SPPlaylistContainerCallbacksHolder` which enables us to get list of playlists.
+    [[NSUserDefaults standardUserDefaults] removeObjectForKey:[NSString stringWithFormat:@"%@.com.spotify.feature.abba.ios_cosmos_image_loader", user.username]];
+    return user;
 }
 
 %end
