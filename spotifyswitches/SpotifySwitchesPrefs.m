@@ -43,7 +43,7 @@
 }
 
 - (void)sendEmail {
-    [[UIApplication sharedApplication] openURL:[NSURL URLWithString:@"mailto:andreaskhenriksson@gmail.com@gmail.com?subject=SpotifySwitches"]];
+    [[UIApplication sharedApplication] openURL:[NSURL URLWithString:@"mailto:andreaskhenriksson@gmail.com?subject=SpotifySwitches"]];
 }
 
 @end

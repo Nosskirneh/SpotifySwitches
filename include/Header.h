@@ -47,6 +47,7 @@ NSString *const devicesKey = @"ConnectDevices";
 NSString *const activeDeviceKey = @"ActiveConnectDevice";
 NSString *const playlistsKey = @"Playlists";
 NSString *const chosenPlaylistKey = @"ChosenPlaylist";
+NSString *const skipDuplicatesKey = @"skipDuplicates";
 NSString *const isCurrentTrackNullKey = @"isCurrentTrackNull";
 NSString *const isCurrentTrackInCollectionKey = @"isCurrentTrackInCollection";
 NSString *const incognitoKey = @"IncognitoMode";

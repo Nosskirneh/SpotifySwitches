@@ -158,7 +158,7 @@ void addCurrentTrackToPlaylist(CFNotificationCenterRef center,
         if ([playlist.name isEqualToString:chosenPlaylist]) {
             SPPlayerTrack *currentTrack = ((SPPlayerTrack *)[statefulPlayer currentTrack]);
             for (NSURL* trackURL in [playlist trackURLSet]) {
-                if ([[preferences objectForKey:@"skipDuplicates"] boolValue] && [trackURL isEqual:currentTrack.URI]) {
+                if ([[preferences objectForKey:skipDuplicatesKey] boolValue] && [trackURL isEqual:currentTrack.URI]) {
                     HBLogDebug(@"Found duplicate!");
                     return;
                 }
