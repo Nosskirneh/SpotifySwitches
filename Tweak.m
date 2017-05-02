@@ -158,7 +158,7 @@ void addCurrentTrackToPlaylist(CFNotificationCenterRef center,
         if ([playlist.name isEqualToString:chosenPlaylist]) {
             SPPlayerTrack *currentTrack = ((SPPlayerTrack *)[statefulPlayer currentTrack]);
             for (NSURL* trackURL in [playlist trackURLSet]) {
-                if ([[preferences objectForKey:skipDuplicatesKey] boolValue] && [trackURL isEqual:currentTrack.URI]) {
+                if ([[preferences objectForKey:@"skipDuplicates"] boolValue] && [trackURL.absoluteString isEqualToString:currentTrack.URI.absoluteString]) {
                     HBLogDebug(@"Found duplicate!");
                     return;
                 }
@@ -246,6 +246,51 @@ void toggleIncognitoMode(CFNotificationCenterRef center,
         fetchPlaylists();
     }
     fetchCallCount++;
+}
+
+%end
+
+
+%hook SPTPlaylistCosmosModel
+
+// Fortunately the URL is given, so we can match it against the smaller array
+// and remove the matching playlist.
+- (void)removePlaylistOrFolderURL:(NSURL *)url inFolderURL:(id)arg2 completion:(id)arg3 {
+    %orig;
+
+    playlists = [[preferences objectForKey:playlistsKey] mutableCopy];
+    for (int i = 0; i < playlists.count; i++) {
+        NSMutableDictionary *playlist = [playlists objectAtIndex:i];
+        if ([playlist[@"URL"] isEqualToString:url.absoluteString]) {
+            HBLogDebug(@"Removed playlist with url: %@", url.absoluteString);
+
+            // Remove playlist from array
+            [playlists removeObjectAtIndex:i];
+            [preferences setObject:playlists forKey:playlistsKey];
+
+            writeToSettings();
+            [playlists release];
+        }
+    }
+}
+
+- (void)renamePlaylistURL:(NSURL *)url name:(NSString *)name completion:arg {
+    %orig;
+
+
+    playlists = [[preferences objectForKey:playlistsKey] mutableCopy];
+    for (int i = 0; i < playlists.count; i++) {
+        NSMutableDictionary *playlist = [playlists objectAtIndex:i];
+        if ([playlist[@"URL"] isEqualToString:url.absoluteString]) {
+            HBLogDebug(@"Renaming playlist with url: %@", url.absoluteString);
+
+            playlist[@"name"] = name;
+            [preferences setObject:playlists forKey:playlistsKey];
+
+            writeToSettings();
+            [playlists release];
+        }
+    }
 }
 
 %end
