@@ -1,6 +1,6 @@
 #import <Preferences/PSListController.h>
 #import <Preferences/PSSpecifier.h>
-#import "../include/Header.h"
+#import "../include/Common.h"
 
 @interface SpotifySwitchesRootListController : PSListController
 
