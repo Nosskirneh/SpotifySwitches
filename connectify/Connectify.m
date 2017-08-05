@@ -2,8 +2,6 @@
 
 static id lockscreenContext = nil;
 
-%group main
-
 void checkLocked() {
     SBLockScreenManager *manager = (SBLockScreenManager *)[objc_getClass("SBLockScreenManager") sharedInstance];
     SBLockScreenViewControllerBase *controller = [(SBLockScreenManager *)[objc_getClass("SBLockScreenManager") sharedInstance] lockScreenViewController];
@@ -64,36 +62,12 @@ void checkLocked() {
 %end
 
 
-%end
-
-
-%ctor {
-    @autoreleasepool {
-        %init(main);
-    }
-}
-
-
 
 @implementation Connectify
 
-NSString *activeDevice;
-
 + (void)load {
-    NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
     if ([[[NSBundle mainBundle] bundleIdentifier] isEqualToString:@"com.apple.springboard"])
         [(LAActivator *)[%c(LAActivator) sharedInstance] registerListener:[self new] forName:@"se.nosskirneh.connectify"];
-    [pool release];
-}
-
-- (id)init {
-    self = [super init];
-
-    // Init settings file
-    preferences = [[NSMutableDictionary alloc] initWithContentsOfFile:prefPath];
-    if (!preferences) preferences = [[NSMutableDictionary alloc] init];
-    
-    return self;
 }
 
 - (UIAlertAction *)createConnectDeviceAction:(NSString *)title atIndex:(NSInteger)index {
@@ -122,8 +96,8 @@ NSString *activeDevice;
     
     if ([app pid] >= 0) { // Spotify is running
         // Update preferences
-        preferences  = [[NSMutableDictionary alloc] initWithContentsOfFile:prefPath];
-        bool offline = [[preferences objectForKey:offlineKey] boolValue];
+        self.preferences = [[NSMutableDictionary alloc] initWithContentsOfFile:prefPath];
+        BOOL offline = [[self.preferences objectForKey:offlineKey] boolValue];
 
         if (offline) {
             UIAlertAction *goOnlineAction = [UIAlertAction
@@ -131,14 +105,14 @@ NSString *activeDevice;
                                               style:UIAlertActionStyleDestructive
                                               handler:^(UIAlertAction *action) {
                                                   HBLogDebug(@"Trying to go online");
-                                                  CFNotificationCenterPostNotification(CFNotificationCenterGetDarwinNotifyCenter(), (CFStringRef)doDisableOfflineModeNotification, NULL, NULL, YES);
+                                                  notify(doDisableOfflineModeNotification);
                                               }];
             
             [connectAlert addAction:goOnlineAction];
         }
 
-        deviceNames  = [preferences objectForKey:devicesKey];
-        activeDevice = [preferences objectForKey:activeDeviceKey];
+        NSArray *deviceNames  = [self.preferences objectForKey:devicesKey];
+        NSString *activeDevice = [self.preferences objectForKey:activeDeviceKey];
         
         for (int i = 0; i < deviceNames.count; i++) {
             UIAlertAction *deviceAction;
@@ -165,8 +139,7 @@ NSString *activeDevice;
     UIAlertAction* cancel = [UIAlertAction
                              actionWithTitle:@"Cancel"
                              style:UIAlertActionStyleCancel
-                             handler:^(UIAlertAction * action)
-                             {
+                             handler:^(UIAlertAction * action) {
                                  [connectAlert dismissViewControllerAnimated:YES completion:nil];
                                  
                              }];
@@ -176,29 +149,25 @@ NSString *activeDevice;
 }
 
 - (void)clickedDeviceAtIndex:(NSInteger)index {
+    NSArray *deviceNames = [self.preferences objectForKey:devicesKey];
     NSString *selectedDeviceName = deviceNames[index];
+    NSString *activeDevice = [self.preferences objectForKey:activeDeviceKey];
     
     if ([activeDevice isEqualToString:selectedDeviceName]) {
         HBLogDebug(@"Trying to disconnected from: %@", selectedDeviceName);
-        [preferences setObject:@"" forKey:activeDeviceKey];
+        [self.preferences setObject:@"" forKey:activeDeviceKey];
     } else {
         HBLogDebug(@"Trying to connect to: %@", selectedDeviceName);
-        [preferences setObject:selectedDeviceName forKey:activeDeviceKey];
+        [self.preferences setObject:selectedDeviceName forKey:activeDeviceKey];
     }
     
     // Save to .plist
-    if (![preferences writeToFile:prefPath atomically:YES]) {
+    if (![self.preferences writeToFile:prefPath atomically:YES]) {
         HBLogError(@"Could not save preferences!");
     } else {
         // Send notification that device was changed
-        CFNotificationCenterPostNotification(CFNotificationCenterGetDarwinNotifyCenter(), (CFStringRef)doChangeConnectDeviceNotification, NULL, NULL, YES);
+        notify(doChangeConnectDeviceNotification);
     }
-}
-
-- (void)dealloc {
-    [deviceNames release];
-    
-    [super dealloc];
 }
 
 @end

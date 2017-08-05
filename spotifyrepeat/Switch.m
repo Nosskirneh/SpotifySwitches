@@ -1,18 +1,11 @@
 #import "../include/FSSwitchDataSource.h"
 #import "../include/FSSwitchPanel.h"
-#import "../include/Header.h"
+#import "../include/Common.h"
 
 @interface SpotifyRepeatSwitch : NSObject <FSSwitchDataSource>
 @end
 
 @implementation SpotifyRepeatSwitch
-
-- (id)init {
-    // Init settings file
-    preferences = [[NSMutableDictionary alloc] initWithContentsOfFile:prefPath];
-    if (!preferences) preferences = [[NSMutableDictionary alloc] init];
-    return self;
-}
 
 - (NSString *)titleForSwitchIdentifier:(NSString *)switchIdentifier {
     return @"Spotify Repeat";
@@ -20,7 +13,7 @@
 
 - (FSSwitchState)stateForSwitchIdentifier:(NSString *)switchIdentifier {
     // Update setting
-    preferences = [[NSMutableDictionary alloc] initWithContentsOfFile:prefPath];
+    NSMutableDictionary *preferences = [[NSMutableDictionary alloc] initWithContentsOfFile:prefPath];
     
     BOOL enabled = [[preferences objectForKey:repeatKey] boolValue];
     return (enabled) ? FSSwitchStateOn : FSSwitchStateOff;
@@ -32,11 +25,11 @@
             return;
             
         case FSSwitchStateOn:
-            CFNotificationCenterPostNotification(CFNotificationCenterGetDarwinNotifyCenter(), (CFStringRef)doEnableRepeatNotification, NULL, NULL, YES);
+            notify(doEnableRepeatNotification);
             break;
             
         case FSSwitchStateOff:
-            CFNotificationCenterPostNotification(CFNotificationCenterGetDarwinNotifyCenter(), (CFStringRef)doDisableRepeatNotification, NULL, NULL, YES);
+            notify(doDisableRepeatNotification);
             break;
     }
     return;

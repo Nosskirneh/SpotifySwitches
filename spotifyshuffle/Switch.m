@@ -1,18 +1,11 @@
 #import "../include/FSSwitchDataSource.h"
 #import "../include/FSSwitchPanel.h"
-#import "../include/Header.h"
+#import "../include/Common.h"
 
 @interface SpotifyShuffleSwitch : NSObject <FSSwitchDataSource>
 @end
 
 @implementation SpotifyShuffleSwitch
-
-- (id)init {
-    // Init settings file
-    preferences = [[NSMutableDictionary alloc] initWithContentsOfFile:prefPath];
-    if (!preferences) preferences = [[NSMutableDictionary alloc] init];
-    return self;
-}
 
 - (NSString *)titleForSwitchIdentifier:(NSString *)switchIdentifier {
 	return @"Spotify Shuffle";
@@ -20,7 +13,7 @@
 
 - (FSSwitchState)stateForSwitchIdentifier:(NSString *)switchIdentifier {
     // Update setting
-    preferences = [[NSMutableDictionary alloc] initWithContentsOfFile:prefPath];
+    NSMutableDictionary *preferences = [[NSMutableDictionary alloc] initWithContentsOfFile:prefPath];
 
     BOOL enabled = [[preferences objectForKey:shuffleKey] boolValue];
 	return (enabled) ? FSSwitchStateOn : FSSwitchStateOff;
@@ -32,7 +25,7 @@
     }
 
     // Send notification
-    CFNotificationCenterPostNotification(CFNotificationCenterGetDarwinNotifyCenter(), (CFStringRef)doToggleShuffleNotification, NULL, NULL, YES);
+    notify(doToggleShuffleNotification);
     return;
 }
 

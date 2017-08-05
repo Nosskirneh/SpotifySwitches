@@ -2,18 +2,16 @@
 
 static id lockscreenContext = nil;
 
-%group main
-
 void checkLocked() {
     SBLockScreenManager *manager = (SBLockScreenManager *)[objc_getClass("SBLockScreenManager") sharedInstance];
     SBLockScreenViewControllerBase *controller = [(SBLockScreenManager *)[objc_getClass("SBLockScreenManager") sharedInstance] lockScreenViewController];
-    
+
     void (^action)() = ^() {
         //dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 1. * NSEC_PER_SEC), dispatch_get_main_queue(), ^{ // Uncomment if you need to wait for the unlock animation to finish
         [[%c(UIApplication) sharedApplication] launchApplicationWithIdentifier:spotifyBundleIdentifier suspended:NO];
         //});
     };
-    
+
     if ([manager isUILocked]) { // Check if device is locked
         
         if (kCFCoreFoundationVersionNumber > 900.00) { // iOS 8+
@@ -23,8 +21,7 @@ void checkLocked() {
             lockscreenContext = [[objc_getClass("SBUnlockActionContext") alloc] initWithLockLabel:nil shortLockLabel:nil unlockAction:action identifier:nil];
             [controller setCustomUnlockActionContext:lockscreenContext];
         }
-        
-        
+
         if (kCFCoreFoundationVersionNumber >= 1348.0) { // iOS 10+
             if (![controller isAuthenticated]) { // Check if the passcode is set
                 [lockscreenContext setDeactivateAwayController:YES];
@@ -53,9 +50,11 @@ void checkLocked() {
 
 %hook SBLockScreenManager // This part is only needed on iOS10
 
--(void)setPasscodeVisible:(BOOL)arg1 animated:(BOOL)arg2 {
+- (void)setPasscodeVisible:(BOOL)arg1 animated:(BOOL)arg2 {
     %orig;
-    if(kCFCoreFoundationVersionNumber >= 1348.0 && !arg1 && !self.lockScreenViewController.isAuthenticated && [self.lockScreenViewController._customLockScreenActionContext isEqual:lockscreenContext]) {
+
+    if(kCFCoreFoundationVersionNumber >= 1348.0 && !arg1 && !self.lockScreenViewController.isAuthenticated &&
+       [self.lockScreenViewController._customLockScreenActionContext isEqual:lockscreenContext]) {
         HBLogInfo(@"User canceled passcode prompt. Cancelling Action");
         [self.lockScreenViewController setCustomLockScreenActionContext:nil];
     }
@@ -64,34 +63,12 @@ void checkLocked() {
 %end
 
 
-%end
-
-
-%ctor {
-    @autoreleasepool {
-        %init(main);
-    }
-}
-
-
 
 @implementation AddToPlaylist
 
 + (void)load {
-    NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
     if ([[[NSBundle mainBundle] bundleIdentifier] isEqualToString:@"com.apple.springboard"])
         [(LAActivator *)[%c(LAActivator) sharedInstance] registerListener:[self new] forName:@"se.nosskirneh.addtoplaylist"];
-    [pool release];
-}
-
-- (id)init {
-    self = [super init];
-
-    // Init settings file
-    preferences = [[NSMutableDictionary alloc] initWithContentsOfFile:prefPath];
-    if (!preferences) preferences = [[NSMutableDictionary alloc] init];
-    
-    return self;
 }
 
 // Called when the user-defined action is recognized, shows selection alert
@@ -108,23 +85,24 @@ void checkLocked() {
     
     if ([app pid] >= 0) { // Spotify is running
         // Update preferences
-        preferences = [[NSMutableDictionary alloc] initWithContentsOfFile:prefPath];
+        self.preferences = [[NSMutableDictionary alloc] initWithContentsOfFile:prefPath];
         
-        if ([[preferences objectForKey:isCurrentTrackNullKey] boolValue]) {
+        if ([[self.preferences objectForKey:isCurrentTrackNullKey] boolValue]) {
             // Not listening to music
             UIAlertAction *launchAppAction = [self createLaunchAppAction:@"Play some music"];
             [playlistAlert addAction:launchAppAction];
         } else {
             
             // Has user specified playlist in Preferences?
+            NSString *specifiedPlaylistName = self.preferences[specifiedPlaylistNameKey];
             if (specifiedPlaylistName != nil && ![specifiedPlaylistName isEqualToString:@""]) {
                 HBLogDebug(@"Found non-empty specified playlist!");
                 
-                CFNotificationCenterPostNotification(CFNotificationCenterGetDarwinNotifyCenter(), (CFStringRef)addCurrentTrackToPlaylistNotification, NULL, NULL, YES);
+                notify(addCurrentTrackToPlaylistNotification);
                 return;
             }
             
-            playlists = [preferences objectForKey:playlistsKey];
+            NSArray *playlists = [self.preferences objectForKey:playlistsKey];
             
             UIAlertAction *playlistAction;
             for (int i = 0; i < playlists.count; i++) {
@@ -146,8 +124,7 @@ void checkLocked() {
     UIAlertAction* cancel = [UIAlertAction
                              actionWithTitle:@"Cancel"
                              style:UIAlertActionStyleCancel
-                             handler:^(UIAlertAction * action)
-                             {
+                             handler:^(UIAlertAction * action) {
                                  [playlistAlert dismissViewControllerAnimated:YES completion:nil];
                                  
                              }];
@@ -167,17 +144,14 @@ void checkLocked() {
 }
 
 - (void)clickedPlaylistAtIndex:(NSInteger)index {
-    NSString *selectedPlaylistName = [playlists[index] objectForKey:@"name"];
+    self.preferences[playlistIndexKey] = [NSNumber numberWithInteger:index];
 
-    HBLogDebug(@"Trying to add current track to: %@", selectedPlaylistName);
-    [preferences setObject:selectedPlaylistName forKey:chosenPlaylistKey];
-
-    // Save to .plist
-    if (![preferences writeToFile:prefPath atomically:YES]) {
+    if (![self.preferences writeToFile:prefPath atomically:YES]) {
         HBLogError(@"Could not save preferences!");
+    } else {
+        // Send notification that device was changed
+        notify(addCurrentTrackToPlaylistNotification);
     }
-    // Send notification that a playlist was choosen
-    CFNotificationCenterPostNotification(CFNotificationCenterGetDarwinNotifyCenter(), (CFStringRef)addCurrentTrackToPlaylistNotification, NULL, NULL, YES);
 }
 
 @end

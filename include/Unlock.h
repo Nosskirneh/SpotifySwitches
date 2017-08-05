@@ -8,13 +8,13 @@
 @end
 
 @interface SBLockScreenViewControllerBase: SBAlert
--(void)setCustomLockScreenActionContext:(id)arg1 ;
+-(void)setCustomLockScreenActionContext:(id)arg1;
 -(void)setCustomUnlockActionContext:(id)arg1;
 -(id)_customLockScreenActionContext;
 -(void)deactivate;
 -(void)prepareForUIUnlock;
 -(void)prepareForExternalUIUnlock;
--(void)finishUIUnlockFromSource:(int)arg1 ;
+-(void)finishUIUnlockFromSource:(int)arg1;
 -(void)attemptToUnlockUIFromNotification;
 -(void)_transitionWallpaperFromLock;
 
@@ -28,9 +28,9 @@
 -(void)noteMenuButtonDown;
 -(void)noteMenuButtonUp;
 -(BOOL)handleMenuButtonTap;
--(void)willBeginDeactivationForTransitionToApps:(id)arg1 animated:(BOOL)arg2 ;
+-(void)willBeginDeactivationForTransitionToApps:(id)arg1 animated:(BOOL)arg2;
 -(void)didCompleteTransitionOutOfLockScreen;
--(void)handleBiometricEvent:(unsigned long long)arg1 ;
+-(void)handleBiometricEvent:(unsigned long long)arg1;
 -(BOOL)shouldUnlockUIOnKeyDownEvent;
 -(BOOL)isAuthenticated;
 -(BOOL)isLockScreenVisible;
@@ -44,7 +44,7 @@
 - (void)attemptUnlockWithMesa;
 -(BOOL)isLockScreenActive;
 -(BOOL)_isUnlockDisabled;
--(BOOL)_finishUIUnlockFromSource:(int)arg1 withOptions:(id)arg2 ;
+-(BOOL)_finishUIUnlockFromSource:(int)arg1 withOptions:(id)arg2;
 -(BOOL)isLockScreenVisible;
 
 @end
@@ -55,7 +55,7 @@
 @end
 
 @interface SBLockScreenActionContext : NSObject
--(id)initWithLockLabel:(id)arg1 shortLockLabel:(id)arg2 action:(/*^block*/id)arg3 identifier:(id)arg4 ;
+-(id)initWithLockLabel:(id)arg1 shortLockLabel:(id)arg2 action:(/*^block*/id)arg3 identifier:(id)arg4;
 - (void)setDeactivateAwayController:(BOOL)deactivate;
--(void)setAction:(id)arg1 ;
+-(void)setAction:(id)arg1;
 @end

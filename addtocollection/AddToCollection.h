@@ -2,7 +2,7 @@
 #import <SpringBoard/SBApplication.h>
 #import <SpringBoard/SBApplicationController.h>
 #import <UIKit/UIApplication2.h>
-#import "../include/Header.h"
+#import "../include/Common.h"
 #import "../include/UIAlertController.h"
 
 @interface AddToCollection : NSObject <LAListener>

@@ -3,20 +3,8 @@
 @implementation AddToCollection
 
 + (void)load {
-    NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
     if ([[[NSBundle mainBundle] bundleIdentifier] isEqualToString:@"com.apple.springboard"])
         [(LAActivator *)[%c(LAActivator) sharedInstance] registerListener:[self new] forName:@"se.nosskirneh.addtocollection"];
-    [pool release];
-}
-
-- (id)init {
-    self = [super init];
-
-    // Init settings file
-    preferences = [[NSMutableDictionary alloc] initWithContentsOfFile:prefPath];
-    if (!preferences) preferences = [[NSMutableDictionary alloc] init];
-    
-    return self;
 }
 
 - (UIAlertAction *)createLaunchAppAction:(NSString *)title {
@@ -32,7 +20,7 @@
 - (void)activator:(LAActivator *)activator receiveEvent:(LAEvent *)event {
     [event setHandled:YES];
     // Update preferences
-    preferences = [[NSMutableDictionary alloc] initWithContentsOfFile:prefPath];
+    NSMutableDictionary *preferences = [[NSMutableDictionary alloc] initWithContentsOfFile:prefPath];
     
     UIAlertController *alert = [UIAlertController
                                         alertControllerWithTitle:@"Ohoh"
@@ -54,11 +42,9 @@
                 UIAlertAction* remove = [UIAlertAction
                                          actionWithTitle:@"Remove"
                                          style:UIAlertActionStyleDestructive
-                                         handler:^(UIAlertAction * action)
-                                         {
+                                         handler:^(UIAlertAction * action) {
                                              // Change the message of the alert here
-                                             CFNotificationCenterPostNotification(CFNotificationCenterGetDarwinNotifyCenter(), (CFStringRef)toggleCurrentTrackInCollectionNotification, NULL, NULL, YES);
-                                             
+                                             notify(toggleCurrentTrackInCollectionNotification);
                                          }];
                 [alert addAction:remove];
             }
@@ -84,7 +70,7 @@
         [alert show];
     } else {
         // Send notification
-        CFNotificationCenterPostNotification(CFNotificationCenterGetDarwinNotifyCenter(), (CFStringRef)toggleCurrentTrackInCollectionNotification, NULL, NULL, YES);
+        notify(toggleCurrentTrackInCollectionNotification);
     }
 }
 

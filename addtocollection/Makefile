@@ -3,6 +3,7 @@ include $(THEOS)/makefiles/common.mk
 TWEAK_NAME = AddToCollection
 AddToCollection_FILES = AddToCollection.xm
 AddToCollection_LIBRARIES = activator
+AddToCollection_CFLAGS = -fobjc-arc
 
 include $(THEOS_MAKE_PATH)/tweak.mk
 
