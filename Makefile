@@ -1,20 +1,13 @@
 include $(THEOS)/makefiles/common.mk
 
 TWEAK_NAME = SpotifySwitches
-SpotifySwitches_FILES = Tweak.xm
+SpotifySwitches_FILES = SpotifySwitches.xm include/Common.xm
+SpotifySwitches_LIBRARIES = MobileGestalt
 
 include $(THEOS_MAKE_PATH)/tweak.mk
 
-# Sometimes theos replaces my symlink :(
-before-stage::
-	rm tweak.xm; ln -s Tweak.m Tweak.xm
-	find . -name ".DS_Store" -delete
-
-before-install::
-	~/Dropbox/bin/updateIP.sh && source ~/Dropbox/bin/theos.sh
-
 internal-after-install::
-	install.exec "killall -9 SpringBoard"
+	install.exec "killall -9 Spotify"
 
 SUBPROJECTS += spotifyofflinemode
 SUBPROJECTS += spotifyshuffle
