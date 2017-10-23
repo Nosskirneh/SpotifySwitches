@@ -75,10 +75,23 @@ extern "C" CFPropertyListRef MGCopyAnswer(CFStringRef property);
 @end
 
 
+@interface SPTIncognitoModeHandler : NSObject
+@end
+
+@interface NSObject (Incognito)
+- (BOOL)isIncognitoModeEnabled;
+- (void)disableIncognitoMode;
+- (void)enableIncognitoMode;
+@end
+
 @interface SPSession : NSObject
+// < 8.4.24
 - (void)enableIncognitoMode;
 - (void)disableIncognitoMode;
 - (BOOL)isIncognitoModeEnabled;
+
+// >= 8.4.24
+- (id)incognitoModeHandler;
 @end
 
 

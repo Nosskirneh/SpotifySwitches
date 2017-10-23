@@ -217,10 +217,19 @@ void doDisableRepeat(notifactionArguments) {
 }
 
 // Incognito Mode
+void toggleIncognitoModeWithObject(NSObject *inc) {
+    BOOL enabled = [inc isIncognitoModeEnabled];
+    enabled ? [inc disableIncognitoMode] :
+              [inc enableIncognitoMode];
+}
+
 void toggleIncognitoMode(notifactionArguments) {
-    BOOL enabled = [[[%c(SPCore) sharedCore] session] isIncognitoModeEnabled];
-    enabled ? [[[%c(SPCore) sharedCore] session] disableIncognitoMode] :
-              [[[%c(SPCore) sharedCore] session] enableIncognitoMode];
+    SPSession *session = [[%c(SPCore) sharedCore] session];
+    if ([session respondsToSelector:@selector(isIncognitoModeEnabled)]) {
+        toggleIncognitoModeWithObject(session);
+    } else if ([session respondsToSelector:@selector(incognitoModeHandler)]) {
+        toggleIncognitoModeWithObject([session incognitoModeHandler]);
+    }
 }
 
 
@@ -520,7 +529,16 @@ void toggleIncognitoMode(notifactionArguments) {
     }
 
     // Save current incognito state to preferences
-    preferences[incognitoKey] = [NSNumber numberWithBool:[[[%c(SPCore) sharedCore] session] isIncognitoModeEnabled]];
+    BOOL incognito = NO;
+    SPSession *session = [[%c(SPCore) sharedCore] session];
+    if ([session respondsToSelector:@selector(isIncognitoModeEnabled)]) {
+        incognito = [session isIncognitoModeEnabled];
+    } else if ([session respondsToSelector:@selector(incognitoModeHandler)]) {
+        SPTIncognitoModeHandler *incognitoModeHandler = [session incognitoModeHandler];
+        incognito = [incognitoModeHandler isIncognitoModeEnabled];
+    }
+
+    preferences[incognitoKey] = [NSNumber numberWithBool:incognito];
     writeToSettings(prefPath);
 }
 
@@ -552,7 +570,26 @@ void toggleIncognitoMode(notifactionArguments) {
 
 
 // Incognito Mode
+// < 8.4.24
 %hook SPSession
+
+- (void)enableIncognitoMode {
+    %orig;
+
+    preferences[incognitoKey] = [NSNumber numberWithBool:YES];
+    writeToSettings(prefPath);
+}
+
+- (void)disableIncognitoMode {
+    %orig;
+
+    preferences[incognitoKey] = [NSNumber numberWithBool:NO];
+    writeToSettings(prefPath);
+}
+
+%end
+
+%hook SPTIncognitoModeHandler
 
 - (void)enableIncognitoMode {
     %orig;
