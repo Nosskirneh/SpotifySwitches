@@ -9,6 +9,9 @@ static OfflineSettingsSection *offlineViewController;
 // Shuffle and repeat
 static SPTNowPlayingPlaybackController *playbackController;
 
+// Used to toggle incognito
+static SPCore *core;
+
 // Save to playlist/collection
 static SPTStatefulPlayer *statefulPlayer;
 static SPTNowPlayingAuxiliaryActionsModel *auxActionModel;
@@ -455,6 +458,15 @@ void toggleIncognitoMode(notifactionArguments) {
 %end
 
 
+%hook SPCore
+
++ (id)coreWithCreateOptions:(id)arg1 scheduler:(id)arg2 error:(id *)arg3 {
+    return core = %orig;
+}
+
+%end
+
+
 %hook SettingsViewController
 
 // Used to get the offline section so that the UISwitch can be updated
@@ -530,12 +542,18 @@ void toggleIncognitoMode(notifactionArguments) {
 
     // Save current incognito state to preferences
     BOOL incognito = NO;
-    SPSession *session = [[%c(SPCore) sharedCore] session];
-    if ([session respondsToSelector:@selector(isIncognitoModeEnabled)]) {
-        incognito = [session isIncognitoModeEnabled];
-    } else if ([session respondsToSelector:@selector(incognitoModeHandler)]) {
-        SPTIncognitoModeHandler *incognitoModeHandler = [session incognitoModeHandler];
-        incognito = [incognitoModeHandler isIncognitoModeEnabled];
+    if (!core && [[%c(SPCore) class] respondsToSelector:@selector(sharedCore)]) { // > 8.4.26
+        core = [%c(SPCore) sharedCore];
+    }
+
+    if (core) {
+        SPSession *session = [core session];
+        if ([session respondsToSelector:@selector(isIncognitoModeEnabled)]) {
+            incognito = [session isIncognitoModeEnabled];
+        } else if ([session respondsToSelector:@selector(incognitoModeHandler)]) {
+            SPTIncognitoModeHandler *incognitoModeHandler = [session incognitoModeHandler];
+            incognito = [incognitoModeHandler isIncognitoModeEnabled];
+        }
     }
 
     preferences[incognitoKey] = [NSNumber numberWithBool:incognito];
