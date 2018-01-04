@@ -589,6 +589,7 @@ void toggleIncognitoMode(notifactionArguments) {
 
 // Incognito Mode
 // < 8.4.24
+%group incognito_8423
 %hook SPSession
 
 - (void)enableIncognitoMode {
@@ -606,7 +607,9 @@ void toggleIncognitoMode(notifactionArguments) {
 }
 
 %end
+%end
 
+%group incognito_8424
 %hook SPTIncognitoModeHandler
 
 - (void)enableIncognitoMode {
@@ -623,6 +626,7 @@ void toggleIncognitoMode(notifactionArguments) {
     writeToSettings(prefPath);
 }
 
+%end
 %end
 
 
@@ -814,4 +818,13 @@ void toggleIncognitoMode(notifactionArguments) {
 
     // Connect:
     subscribe(&doChangeConnectDevice, doChangeConnectDeviceNotification);
+
+    %init();
+
+    // Init Incognito
+    if (%c(SPTIncognitoModeHandler)) {
+        %init(incognito_8424);
+    } else if ([%c(SPSession) instancesRespondToSelector:@selector(enableIncognitoMode:)]) {
+        %init(incognito_8423);
+    }
 }
