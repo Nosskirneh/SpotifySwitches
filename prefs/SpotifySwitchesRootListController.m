@@ -3,27 +3,25 @@
 #import "../include/Common.h"
 
 @interface SpotifySwitchesRootListController : PSListController
-
 @end
-
 
 @implementation SpotifySwitchesRootListController
 
 - (NSArray *)specifiers {
-	if (!_specifiers) {
-		_specifiers = [[self loadSpecifiersFromPlistName:@"SpotifySwitches" target:self] retain];
-	}
+    if (!_specifiers) {
+        _specifiers = [[self loadSpecifiersFromPlistName:@"SpotifySwitches" target:self] retain];
+    }
 
-	return _specifiers;
+    return _specifiers;
 }
 
-- (id)readPreferenceValue:(PSSpecifier*)specifier {
+- (id)readPreferenceValue:(PSSpecifier *)specifier {
     NSString *path = [NSString stringWithFormat:@"/User/Library/Preferences/%@.plist", specifier.properties[@"defaults"]];
     NSDictionary *settings = [NSDictionary dictionaryWithContentsOfFile:path];
     return (settings[specifier.properties[@"key"]]) ?: specifier.properties[@"default"];
 }
 
-- (void)setPreferenceValue:(id)value specifier:(PSSpecifier*)specifier {
+- (void)setPreferenceValue:(id)value specifier:(PSSpecifier *)specifier {
     NSString *path = [NSString stringWithFormat:@"/User/Library/Preferences/%@.plist", specifier.properties[@"defaults"]];
     NSMutableDictionary *settings = [NSMutableDictionary dictionaryWithContentsOfFile:path];
     [settings setObject:value forKey:specifier.properties[@"key"]];
