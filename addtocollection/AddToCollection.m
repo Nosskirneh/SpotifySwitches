@@ -8,12 +8,11 @@
 }
 
 - (UIAlertAction *)createLaunchAppAction:(NSString *)title {
-    return [UIAlertAction
-            actionWithTitle:title
-            style:UIAlertActionStyleDestructive
-            handler:^(UIAlertAction *action) {
-                [[%c(UIApplication) sharedApplication] launchApplicationWithIdentifier:spotifyBundleIdentifier suspended:NO];
-            }];
+    return [UIAlertAction actionWithTitle:title
+                                    style:UIAlertActionStyleDestructive
+                                  handler:^(UIAlertAction *action) {
+                                        launchSpotifyWithUnlock();
+                                  }];
 }
 
 // Called when the user-defined action is recognized
@@ -27,6 +26,14 @@
                                         message:@"Couldn't find current track!"
                                         preferredStyle:UIAlertControllerStyleActionSheet
                                         ];
+
+    if ([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad) {
+        UIWindow *view = [UIApplication sharedApplication].keyWindow;
+        alert.popoverPresentationController.sourceView = view;
+        alert.popoverPresentationController.sourceRect = CGRectMake([[UIScreen mainScreen] bounds].size.width / 2,
+                                                                    [[UIScreen mainScreen] bounds].size.height,
+                                                                    0, 0);
+    }
     
     SBApplication* app = [[%c(SBApplicationController) sharedInstance] applicationWithBundleIdentifier:spotifyBundleIdentifier];
     

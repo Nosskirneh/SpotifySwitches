@@ -23,11 +23,17 @@
 }
 
 - (void)connectStartNotificationReceived:(NSNotification *)notification {
-    UIAlertController *connectAlert = [UIAlertController
-                                        alertControllerWithTitle:@"Connectify"
-                                        message:@"Change Spotify Connect device"
-                                        preferredStyle:UIAlertControllerStyleActionSheet
-                                        ];
+    UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"Connectify"
+                                                                   message:@"Change Spotify Connect device"
+                                                            preferredStyle:UIAlertControllerStyleActionSheet];
+
+    if ([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad) {
+        UIWindow *view = [UIApplication sharedApplication].keyWindow;
+        alert.popoverPresentationController.sourceView = view;
+        alert.popoverPresentationController.sourceRect = CGRectMake([[UIScreen mainScreen] bounds].size.width / 2,
+                                                                    [[UIScreen mainScreen] bounds].size.height,
+                                                                    0, 0);
+    }
 
     SBApplication* app = [[%c(SBApplicationController) sharedInstance] applicationWithBundleIdentifier:spotifyBundleIdentifier];
     
@@ -45,7 +51,7 @@
                                                   notify(doDisableOfflineModeNotification);
                                               }];
             
-            [connectAlert addAction:goOnlineAction];
+            [alert addAction:goOnlineAction];
         }
 
         NSArray *deviceNames  = [self.preferences objectForKey:devicesKey];
@@ -58,7 +64,7 @@
             } else {
                 deviceAction = [self createConnectDeviceAction:deviceNames[i] atIndex:i];
             }
-            [connectAlert addAction:deviceAction];
+            [alert addAction:deviceAction];
         }
     } else {
         UIAlertAction *launchAppAction = [UIAlertAction
@@ -69,20 +75,18 @@
                                              launchSpotifyWithUnlock();
                                          }];
         
-        [connectAlert addAction:launchAppAction];
+        [alert addAction:launchAppAction];
     }
 
-    
-    UIAlertAction* cancel = [UIAlertAction
+    UIAlertAction *cancel = [UIAlertAction
                              actionWithTitle:@"Cancel"
                              style:UIAlertActionStyleCancel
                              handler:^(UIAlertAction * action) {
-                                 [connectAlert dismissViewControllerAnimated:YES completion:nil];
-                                 
+                                 [alert dismissViewControllerAnimated:YES completion:nil];
                              }];
     
-    [connectAlert addAction:cancel];
-    [connectAlert show];
+    [alert addAction:cancel];
+    [alert show];
 }
 
 - (void)clickedDeviceAtIndex:(NSInteger)index {

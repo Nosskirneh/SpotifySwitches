@@ -11,11 +11,17 @@
 - (void)activator:(LAActivator *)activator receiveEvent:(LAEvent *)event {
     [event setHandled:YES];
     
-    UIAlertController *playlistAlert = [UIAlertController
-                                        alertControllerWithTitle:@"Add to Playlist"
-                                        message:@"Add current track to which playlist?"
-                                        preferredStyle:UIAlertControllerStyleActionSheet
-                                        ];
+    UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"Add to Playlist"
+                                                                   message:@"Add current track to which playlist?"
+                                                            preferredStyle:UIAlertControllerStyleActionSheet];
+
+    if ([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad) {
+        UIWindow *view = [UIApplication sharedApplication].keyWindow;
+        alert.popoverPresentationController.sourceView = view;
+        alert.popoverPresentationController.sourceRect = CGRectMake([[UIScreen mainScreen] bounds].size.width / 2,
+                                                                    [[UIScreen mainScreen] bounds].size.height,
+                                                                    0, 0);
+    }
     
     SBApplication* app = [[%c(SBApplicationController) sharedInstance] applicationWithBundleIdentifier:spotifyBundleIdentifier];
     
@@ -26,7 +32,7 @@
         if ([[self.preferences objectForKey:isCurrentTrackNullKey] boolValue]) {
             // Not listening to music
             UIAlertAction *launchAppAction = [self createLaunchAppAction:@"Play some music"];
-            [playlistAlert addAction:launchAppAction];
+            [alert addAction:launchAppAction];
         } else {
             
             // Has user specified playlist in Preferences?
@@ -48,25 +54,24 @@
                                   handler:^(UIAlertAction *action) {
                                       [self clickedPlaylistAtIndex:i];
                                   }];
-                [playlistAlert addAction:playlistAction];
+                [alert addAction:playlistAction];
             }
         }
         
     } else {
         UIAlertAction *launchAppAction = [self createLaunchAppAction:@"Launch Spotify"];
-        [playlistAlert addAction:launchAppAction];
+        [alert addAction:launchAppAction];
     }
     
-    UIAlertAction* cancel = [UIAlertAction
+    UIAlertAction *cancel = [UIAlertAction
                              actionWithTitle:@"Cancel"
                              style:UIAlertActionStyleCancel
                              handler:^(UIAlertAction * action) {
-                                 [playlistAlert dismissViewControllerAnimated:YES completion:nil];
-                                 
+                                 [alert dismissViewControllerAnimated:YES completion:nil];
                              }];
     
-    [playlistAlert addAction:cancel];
-    [playlistAlert show];
+    [alert addAction:cancel];
+    [alert show];
 }
 
 - (UIAlertAction *)createLaunchAppAction:(NSString *)title {
