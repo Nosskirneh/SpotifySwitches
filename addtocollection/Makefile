@@ -1,7 +1,7 @@
 include $(THEOS)/makefiles/common.mk
 
 TWEAK_NAME = AddToCollection
-AddToCollection_FILES = AddToCollection.xm
+AddToCollection_FILES = AddToCollection.xm ../include/Unlock.xm
 AddToCollection_LIBRARIES = activator
 AddToCollection_CFLAGS = -fobjc-arc
 

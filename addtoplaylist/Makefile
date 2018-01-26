@@ -1,7 +1,7 @@
 include $(THEOS)/makefiles/common.mk
 
 TWEAK_NAME = AddToPlaylist
-AddToPlaylist_FILES = AddToPlaylist.xm
+AddToPlaylist_FILES = AddToPlaylist.xm ../include/Unlock.xm
 AddToPlaylist_LIBRARIES = activator
 AddToPlaylist_CFLAGS = -fobjc-arc
 

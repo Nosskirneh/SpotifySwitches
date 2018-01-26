@@ -1,7 +1,6 @@
 #ifndef COMMON
 #define COMMON
 
-
 void writeToSettings(NSString *path);
 
 

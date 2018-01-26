@@ -1,7 +1,7 @@
 include $(THEOS)/makefiles/common.mk
 
 TWEAK_NAME = Connectify
-Connectify_FILES = Connectify.xm
+Connectify_FILES = Connectify.xm ../include/Unlock.xm
 Connectify_LIBRARIES = activator
 Connectify_CFLAGS = -fobjc-arc
 

@@ -54,16 +54,12 @@
         [alert addAction:launchAppAction];
     }
 
-
-    
     if (alert.actions.count != 0) {
         UIAlertAction* cancel = [UIAlertAction
                                  actionWithTitle:@"Cancel"
                                  style:UIAlertActionStyleCancel
-                                 handler:^(UIAlertAction * action)
-                                 {
+                                 handler:^(UIAlertAction * action) {
                                      [alert dismissViewControllerAnimated:YES completion:nil];
-                                     
                                  }];
 
         [alert addAction:cancel];

@@ -1,3 +1,4 @@
+void launchSpotifyWithUnlock();
 
 @interface SBAlert
 @end

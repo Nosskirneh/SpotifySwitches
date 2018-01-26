@@ -1,68 +1,5 @@
 #import "Connectify.h"
 
-static id lockscreenContext = nil;
-
-void checkLocked() {
-    SBLockScreenManager *manager = (SBLockScreenManager *)[objc_getClass("SBLockScreenManager") sharedInstance];
-    SBLockScreenViewControllerBase *controller = [(SBLockScreenManager *)[objc_getClass("SBLockScreenManager") sharedInstance] lockScreenViewController];
-    
-    void (^action)() = ^() {
-        //dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 1. * NSEC_PER_SEC), dispatch_get_main_queue(), ^{ // Uncomment if you need to wait for the unlock animation to finish
-        [[%c(UIApplication) sharedApplication] launchApplicationWithIdentifier:spotifyBundleIdentifier suspended:NO];
-        //});
-    };
-    
-    if ([manager isUILocked]) { // Check if device is locked
-        
-        if (kCFCoreFoundationVersionNumber > 900.00) { // iOS 8+
-            lockscreenContext = [[objc_getClass("SBLockScreenActionContext") alloc] initWithLockLabel:nil shortLockLabel:nil action:action identifier:nil];
-            [controller setCustomLockScreenActionContext:lockscreenContext];
-        } else {
-            lockscreenContext = [[objc_getClass("SBUnlockActionContext") alloc] initWithLockLabel:nil shortLockLabel:nil unlockAction:action identifier:nil];
-            [controller setCustomUnlockActionContext:lockscreenContext];
-        }
-        
-        
-        if (kCFCoreFoundationVersionNumber >= 1348.0) { // iOS 10+
-            if (![controller isAuthenticated]) { // Check if the passcode is set
-                [lockscreenContext setDeactivateAwayController:YES];
-                [controller setPasscodeLockVisible:YES animated:YES completion:nil];
-                return;
-            } else {
-                [manager attemptUnlockWithMesa];
-                return;
-            }
-        } else {
-            [lockscreenContext setDeactivateAwayController:YES];
-            
-            if ([[objc_getClass("SBDeviceLockController") sharedController] isPasscodeLocked]) { // Check if the passcode is set
-                [controller setPasscodeLockVisible:YES animated:YES completion:nil];
-                return;
-            } else {
-                [controller attemptToUnlockUIFromNotification];
-                return;
-            }
-        }
-    }
-   	else {
-        [[%c(UIApplication) sharedApplication] launchApplicationWithIdentifier:spotifyBundleIdentifier suspended:NO];
-   	}
-}
-
-%hook SBLockScreenManager // This part is only needed on iOS10
-
--(void)setPasscodeVisible:(BOOL)arg1 animated:(BOOL)arg2 {
-    %orig;
-    if(kCFCoreFoundationVersionNumber >= 1348.0 && !arg1 && !self.lockScreenViewController.isAuthenticated && [self.lockScreenViewController._customLockScreenActionContext isEqual:lockscreenContext]) {
-        HBLogInfo(@"User canceled passcode prompt. Cancelling Action");
-        [self.lockScreenViewController setCustomLockScreenActionContext:nil];
-    }
-}
-
-%end
-
-
-
 @implementation Connectify
 
 + (void)load {
@@ -129,7 +66,7 @@ void checkLocked() {
                                          style:UIAlertActionStyleDestructive
                                          handler:^(UIAlertAction *action) {
                                              HBLogDebug(@"Trying to launch Spotify...");
-                                             checkLocked();
+                                             launchSpotifyWithUnlock();
                                          }];
         
         [connectAlert addAction:launchAppAction];
