@@ -714,7 +714,8 @@ void toggleIncognitoMode(notifactionArguments) {
         }
 
         if (deviceNames.count > 0) {
-            preferences[devicesKey] = deviceNames;
+            // Sort devices
+            preferences[devicesKey] = [deviceNames sortedArrayUsingSelector:@selector(compare:)];
         }
     }
 
